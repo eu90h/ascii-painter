@@ -40,13 +40,25 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (new-callback menu evt) 
-  (change-scene (new scene% [width canvas-width] [height canvas-height] [tile empty-tile]))
-  (set-cur-tile empty-tile)
-  (set! tiles (list empty-tile))
-  (send tile-choices clear)
-  (send tile-choices append (tile-descr empty-tile))
-  (set! creator-next-num 1)
-  (generate-id))
+  (define dialog (new dialog% [label "New Scene"]))
+  (define hpanel (new horizontal-panel% [parent dialog]))
+  (define width-field (new text-field% [label "Width"] [parent hpanel]))
+  (define height-field (new text-field% [label "Height"] [parent hpanel]))
+  (define tile-choices (new choice% [label "Tiles"] [parent hpanel] [choices (map tile-descr tiles)]))
+  (define choice->tile ((curry list-ref) tiles))
+  (define (make-new-scene btn evt)
+    (send dialog show #f)
+    (let ([w (string->number (send width-field get-value))] 
+          [h (string->number (send height-field get-value))]
+          [t (choice->tile (send tile-choices get-selection))])
+      (change-scene (new scene% [width w] [height h] [tile t])))
+    (send tile-choices set-selection 0)
+    (change-tile tile-choices evt)
+    (set! creator-next-num (send tile-choices get-number))
+    (generate-id))
+
+  (define ok-btn (new button% [label "OK"] [parent hpanel] [callback make-new-scene]))
+  (send dialog show #t))
 
 (define new-menu (new menu-item% (label "New") (parent file-menu) (callback new-callback)))
 
