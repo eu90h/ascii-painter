@@ -18,7 +18,7 @@ Features
 * Generators (Fill map, Random Placement, Random Rectangle)
 * Full color support
 * All glyphs in code-page 437 supported
-* Saving and loading of maps (however, see Known Bugs)
+* Saving and loading of maps
 
 Upcoming Features
 -----------------
@@ -27,7 +27,6 @@ Upcoming Features
 
 Known Bugs
 ----------
-* Error in saving and loading (this will be fixed VERY soon)
 * Error with room connector (don't use it for now, just paint a connection between them)
 
 Credits
