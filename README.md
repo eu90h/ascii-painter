@@ -7,6 +7,11 @@ place tiles in the exact area you need them.
 
 This tool would be good for creating static city/town levels for instance.
 
+Usage
+-----
+run 'racket main.rkt'.
+Ascii-painter requires jpverkamp's ascii-canvas library.
+
 Features
 --------
 * Brushes (Paintbrush, single painter, line brush)
@@ -24,3 +29,7 @@ Known Bugs
 ----------
 * Error in saving and loading (this will be fixed VERY soon)
 * Error with room connector (don't use it for now, just paint a connection between them)
+
+Credits
+-------
+* Thanks to jpverkamp for ascii-canvas
