@@ -51,8 +51,6 @@
                                          (define number-field (new text-field% [label "Amount to add"] [parent hpanel]))
                                          (define (set-tile btn evt)
                                            (let ([s (send scene copy)] [tiles (map choice->tile (send tile-choices get-selections))])
-                                             (displayln "tiles:")
-                                             (displayln (map (lambda (x) (tile-descr x)) tiles))
                                              (let loop ([n (string->number (send number-field get-value))])
                                                (place-random-tile tiles)
                                                (unless (zero? n) (loop (sub1 n)))))

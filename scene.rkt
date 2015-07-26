@@ -30,14 +30,12 @@
 ; tile -> tile
 ; converts the color% objects inside the tile into serial-color% objects
 (define (serialize-tile t) 
- 
-    (tile (tile-symbol t) (serialize-color (tile-fg t)) (serialize-color (tile-bg t)) (tile-descr t)))
+  (tile (tile-symbol t) (serialize-color (tile-fg t)) (serialize-color (tile-bg t)) (tile-descr t)))
 
 ; tile -> tile
 ; converts the serial-color% objects inside the tile into color% objects. this the inverse of serialize-tile
 (define (deserialize-tile t) 
-  
-    (tile (tile-symbol t) (deserialize-color (tile-fg t)) (deserialize-color (tile-bg t)) (tile-descr t)))
+  (tile (tile-symbol t) (deserialize-color (tile-fg t)) (deserialize-color (tile-bg t)) (tile-descr t)))
 
 ; scene -> serialized-object
 ; serializes all tiles in a scene
