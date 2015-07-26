@@ -357,8 +357,6 @@
     (send descr-field set-value (tile-descr cur-tile))
     (generate-id)
     (send creator-symbol-field set-selection 0)
-    (set! creator-bg-color (make-object color% 0 0 0 1.0))
-    (set! creator-fg-color (make-object color% 0 0 0 1.0))
     (send creator-dialog show #f)))
 
 (define creator-button-panel (new vertical-panel% [parent creator-panel]))
