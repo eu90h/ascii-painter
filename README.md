@@ -22,12 +22,14 @@ Features
 
 Upcoming Features
 -----------------
+* Saving and loading maps using the rexpaint .xp format
 * More random map generators
 * Circle brush
 
 Known Bugs
 ----------
 * Error with room connector (don't use it for now, just paint a connection between them)
+* Changing a tiles description doesn't update the tile drop-down list.
 
 Credits
 -------
