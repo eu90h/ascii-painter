@@ -69,12 +69,14 @@
   (let* ([loaded-tiles (remove-duplicates (flatten (map vector->list (vector->list (send scene get-data))))
                                           (lambda (t1 t2) (eq? (tile-descr t1) (tile-descr t2))))] 
     [reordered-tiles (append (list (first loaded-tiles)) (reverse (rest loaded-tiles)))])
-   (set! tiles reordered-tiles)
-   (for ([i (in-range (length reordered-tiles))])
+    (set! tiles reordered-tiles)
+    (send tile-choices clear)
+   
+    (for ([i (in-range (length reordered-tiles))])
       (send tile-choices append (tile-descr (list-ref reordered-tiles i)))))
 
-  (set-cur-tile empty-tile)
   (send tile-choices set-selection 0)
+  (change-tile tile-choices evt)
   (set! creator-next-num (send tile-choices get-number))
   (generate-id))
 
@@ -251,7 +253,9 @@
 (define (change-tile choice evt)
   (set-cur-tile (list-ref tiles (send choice get-selection)))
   (send symbol-field set-selection (symbol->integer (tile-symbol cur-tile)))
-  (send descr-field set-value (tile-descr cur-tile)))
+  (send descr-field set-value (tile-descr cur-tile))
+  (send fg-canvas refresh-now)
+  (send bg-canvas refresh-now))
 
 (define tile-choices (new choice% [label "Tiles"] [parent tile-panel] [choices (map tile-descr tiles)] [callback change-tile]))
 
@@ -262,6 +266,11 @@
                            (send descr-field get-value))]
                 [(new-tiles) (append l (cons t (rest r)))])
     (set! tiles new-tiles)
+    (define selection (send tile-choices get-selection))
+    (send tile-choices clear)
+    (for ([i (in-range (length tiles))])
+      (send tile-choices append (tile-descr (list-ref tiles i))))
+    (send tile-choices set-selection selection)
     (send cur-brush set-tile t)
     (send fg-canvas refresh-now)
     (send bg-canvas refresh-now)))
