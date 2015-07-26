@@ -22,6 +22,7 @@ Features
 
 Upcoming Features
 -----------------
+* Saving and loading maps using the rexpaint .xp format
 * More random map generators
 * Circle brush
 
