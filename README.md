@@ -12,6 +12,8 @@ Usage
 run 'racket main.rkt'.
 Ascii-painter requires jpverkamp's ascii-canvas library.
 
+The camera is controlled with the arrow keys. The default map is 70x30. To change the dimensions, click File->New Map.
+
 Features
 --------
 * Brushes (Paintbrush, single painter, line brush)
