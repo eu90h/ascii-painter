@@ -2,9 +2,6 @@
 
 (require racket/serialize ascii-canvas "scene.rkt" "symbol.rkt" "brush.rkt" "point.rkt" "util.rkt" "generator.rkt")
 
-(define creator-fg-color (make-object color% 100 100 100))
-(define creator-bg-color (make-object color% 100 100 100))
-
 (define camera-pos (pt 0 0))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -42,7 +39,14 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (new-callback menu evt) (change-scene (new scene% [width canvas-width] [height canvas-height] [tile empty-tile])))
+(define (new-callback menu evt) 
+  (change-scene (new scene% [width canvas-width] [height canvas-height] [tile empty-tile]))
+  (set-cur-tile empty-tile)
+  (set! tiles (list empty-tile))
+  (send tile-choices clear)
+  (send tile-choices append (tile-descr empty-tile))
+  (set! creator-next-num 1)
+  (generate-id))
 
 (define new-menu (new menu-item% (label "New") (parent file-menu) (callback new-callback)))
 
@@ -50,7 +54,7 @@
 
 (define (save-callback menu evt) 
   (define out (open-output-file (put-file) #:mode 'binary #:exists 'replace))
-	(write (serialize scene) out)
+	(write (serialize-scene (send scene copy)) out)
 	(close-output-port out))
 
 (define save-menu (new menu-item% (label "Save") (parent file-menu) (callback save-callback)))
@@ -59,15 +63,20 @@
 
 (define (load-callback menu evt)
   (define in (open-input-file (get-file) #:mode 'binary))
-  (set! scene (deserialize (read in)))
-  
-  (define loaded-tiles (remove-duplicates (flatten (map vector->list (vector->list (send scene get-data))))))
-  (for ([i (in-range (length loaded-tiles))])
-    (define t (list-ref loaded-tiles i))
-    (set! tiles (append tiles (list t)))
-    (send tile-choices append (tile-descr t)))
+  (change-scene (deserialize-scene (read in)))
   (close-input-port in)
-  (send canvas draw))
+
+  (let* ([loaded-tiles (remove-duplicates (flatten (map vector->list (vector->list (send scene get-data))))
+                                          (lambda (t1 t2) (eq? (tile-descr t1) (tile-descr t2))))] 
+    [reordered-tiles (append (list (first loaded-tiles)) (reverse (rest loaded-tiles)))])
+   (set! tiles reordered-tiles)
+   (for ([i (in-range (length reordered-tiles))])
+      (send tile-choices append (tile-descr (list-ref reordered-tiles i)))))
+
+  (set-cur-tile empty-tile)
+  (send tile-choices set-selection 0)
+  (set! creator-next-num (send tile-choices get-number))
+  (generate-id))
 
 (define load-menu (new menu-item% (label "Load") (parent file-menu) (callback load-callback)))
 
@@ -288,9 +297,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define creator-next-num 1)
 (define creator-next-id "")
+
 (define (generate-id)
   (let ([id (string-append "Tile " (number->string creator-next-num))])
     (begin (set! creator-next-num (add1 creator-next-num)) (set! creator-next-id id) id)))
+
+(define creator-fg-color (make-object color% 100 100 100))
+(define creator-bg-color (make-object color% 100 100 100))
 
 (define creator-dialog (new dialog% [label "New Tile"] [parent frame]))
 (define creator-panel (new horizontal-panel% [parent creator-dialog]))
@@ -340,13 +353,13 @@
     (send tile-choices append (tile-descr t))
     (send tile-choices set-selection (sub1 (length tiles)))
     (set-cur-tile t)
-   (send symbol-field set-selection (symbol->integer (tile-symbol cur-tile)))
-  (send descr-field set-value (tile-descr cur-tile))
+    (send symbol-field set-selection (symbol->integer (tile-symbol cur-tile)))
+    (send descr-field set-value (tile-descr cur-tile))
     (generate-id)
     (send creator-symbol-field set-selection 0)
     (set! creator-bg-color (make-object color% 0 0 0 1.0))
-  (set! creator-fg-color (make-object color% 0 0 0 1.0))
-  (send creator-dialog show #f)))
+    (set! creator-fg-color (make-object color% 0 0 0 1.0))
+    (send creator-dialog show #f)))
 
 (define creator-button-panel (new vertical-panel% [parent creator-panel]))
 
