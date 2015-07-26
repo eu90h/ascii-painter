@@ -6,6 +6,9 @@ In ascii-painter, you can use random map generators to fill out most of the map,
 place tiles in the exact area you need them.
 
 This tool would be good for creating static city/town levels for instance.
+Screenshots
+-----------
+A quick snow scene I threw together - https://i.imgur.com/1d1yxdg.jpg
 
 Usage
 -----
