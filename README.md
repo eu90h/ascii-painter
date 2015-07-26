@@ -1,5 +1,5 @@
 # ascii-painter
-Ascii-painter is a toolkit that allows you to make roguelike maps out of ascii tiles. 
+Ascii-painter is a toolkit (released under the MIT license) that allows you to make roguelike maps out of ascii tiles. 
 
 Ascii-painter grew out of a roguelike game I'm writing. I needed a way to easily hand-place tiles in certain maps.
 In ascii-painter, you can use random map generators to fill out most of the map, then using the brush tools, specially
