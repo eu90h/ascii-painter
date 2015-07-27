@@ -61,7 +61,10 @@
   
   (define/public (get-data) data)
   (define/public (set-data d) (begin (set! data d) this))
-  
+
+   (define (too-small? x y) (or (< x 0) (< y 0)))
+  (define (too-big? x y) (or (>= x width) (>= y height)))
+
   (define/public (get x y) (if (or (too-big? x y) (too-small? x y))
                               empty-tile (vector-ref (vector-ref data y) x)))
   
@@ -72,8 +75,6 @@
                           (for* ([x (in-range width)] [y (in-range height)])
                               (send s set x y (send this get x y))) s))
                          
-  (define (too-small? x y) (or (< x 0) (< y 0)))
-  (define (too-big? x y) (or (>= x width) (>= y height)))
   
   (define/public (set x y tile) (unless (or (too-big? x y) (too-small? x y)) (vector-set! (vector-ref data y) x tile) this))
   (define/public (process-tiles fn) (for* ([x (in-range width)] [y (in-range height)])
