@@ -1,6 +1,6 @@
 #lang racket/gui
 
-(require racket/serialize ascii-canvas "scene.rkt" "symbol.rkt" "brush.rkt" "point.rkt" "util.rkt" "generator.rkt")
+(require racket/serialize ascii-canvas file/gzip file/gunzip "scene.rkt" "symbol.rkt" "brush.rkt" "point.rkt" "util.rkt" "generator.rkt")
 
 (define camera-pos (pt 0 0))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -19,7 +19,7 @@
 (define canvas-width 70)
 (define canvas-height 30)
 
-(define scene (new scene% [width 70] [height 30] [tile empty-tile]))
+(define scene (new scene% [width canvas-width] [height canvas-height] [tile empty-tile]))
 
 (define (draw-tile canvas tile canvas-x canvas-y)  
   (send canvas write (tile-symbol tile) canvas-x canvas-y (tile-fg tile) (tile-bg tile)))
@@ -65,9 +65,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (save-callback menu evt) 
-  (define out (open-output-file (put-file) #:mode 'binary #:exists 'replace))
-	(write (serialize-scene (send scene copy)) out)
-	(close-output-port out))
+  (let ([path (put-file)] [tmp (make-temporary-file)])
+    (define out (open-output-file tmp #:mode 'binary #:exists 'replace))
+    (write (serialize-scene (send scene copy)) out)
+    (close-output-port out)
+    (gzip (path->string tmp) (path->string path))))
 
 (define save-menu (new menu-item% (label "Save") (parent file-menu) (callback save-callback)))
 
@@ -75,9 +77,11 @@
 
 (define (load-callback menu evt)
   (define in (open-input-file (get-file) #:mode 'binary))
-  (change-scene (deserialize-scene (read in)))
+  (define out (open-output-string))
+  (gunzip-through-ports in out)
   (close-input-port in)
-
+  (change-scene (deserialize-scene (read (open-input-string (get-output-string out)))))
+  (close-output-port out)
   (let* ([loaded-tiles (remove-duplicates (flatten (map vector->list (vector->list (send scene get-data))))
                                           (lambda (t1 t2) (eq? (tile-descr t1) (tile-descr t2))))] 
     [reordered-tiles (append (list (first loaded-tiles)) (reverse (rest loaded-tiles)))])
