@@ -117,7 +117,7 @@
                         (if (valid-pos? (pt-add camera-pos p)) (pt-add camera-pos p) camera-pos))
                       (define/override (on-char key-event)
                         (case (send key-event get-key-code)
-                          [(escape) (exit)]
+                          [(escape) (if (eq? 'yes (message-box "Exit" "Are you sure you want to exit?" frame '(yes-no))) (exit) (void))]
                           [(release menu) (void)]
                           [(up #\w) (set! camera-pos (safe-add  (pt 0 -1))) (send this draw)]
                           [(left #\a) (set! camera-pos (safe-add  (pt -1 0))) (send this draw)]
