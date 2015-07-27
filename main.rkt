@@ -7,11 +7,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define tiles (list empty-tile))
-
+(define selection-tile (tile #\X (make-object color% 255 255 0 1.0) (make-object color% 0 0 0 1.0) "Crosshair"))
 (define cur-tile (first tiles))
 (define (set-cur-tile t)
   (set! cur-tile t)
-  (send cur-brush set-tile t)
+  (unless (eq? cur-brush selection-brush) (send cur-brush set-tile t))
   (send tile-fg-canvas redraw)
   (send tile-bg-canvas redraw))
 
@@ -135,14 +135,16 @@
                         (send frame refresh)
                         (let ([p (send this clamp (send mouse-event get-x) (send mouse-event get-y))])
                           (when (within-scene-bounds? p)
-                            (draw-tile (send scene get (pt-x last-mouse-pt) (pt-y last-mouse-pt)) (pt-x last-mouse-pt) (pt-y last-mouse-pt))
+                            (draw-tile
+                              (send scene get (pt-x last-mouse-pt) (pt-y last-mouse-pt)) (pt-x last-mouse-pt) (pt-y last-mouse-pt))
                             
-                            (let ([q (pt-sub p camera-pos)]) (draw-tile cur-tile (pt-x q) (pt-y q)))
-                            (set! last-mouse-pt (pt-sub p camera-pos))
-                            ))
-                        (let ([return-value (send cur-brush handle mouse-event)])
-                                (when (and (eq? cur-brush selection-brush) (not (eq? (void) return-value)))
-                                    (update-info-panel return-value))))
+                            (let ([q (pt-sub p camera-pos)]) 
+                              (draw-tile  (if (eq? cur-brush selection-brush) selection-tile cur-tile) (pt-x q) (pt-y q))
+                              (when (eq? cur-brush selection-brush) (update-info-panel q)))
+
+                            (set! last-mouse-pt (pt-sub p camera-pos))))
+                        (unless (eq? cur-brush selection-brush) (send cur-brush handle mouse-event)))
+                  
                       
                       (define/public (get-width-in-chars) canvas-width)
 
@@ -205,7 +207,7 @@
 (define (update-info-panel mouse-click-coords)
   (let ([t (send scene get (pt-x mouse-click-coords) (pt-y mouse-click-coords))])
     (when (tile? t)
-      (send tile-choices set-selection (send tile-choices find-string (tile-descr t)))
+      (send tile-choices set-selection (modulo (send tile-choices find-string (tile-descr t)) (send tile-choices get-number)))
       (change-tile tile-choices null))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -376,9 +378,9 @@
 
 (define paint-brush (new paint-brush% [canvas canvas] [scene scene]))
 (define single-brush (new single-brush% [canvas canvas] [scene scene]))
-(define selection-brush (new selection-brush% [canvas canvas] [scene scene] [bg-canvas tile-bg-canvas] [fg-canvas tile-fg-canvas]))
+(define selection-brush #t)
 (define line-brush (new line-brush% [canvas canvas] [scene scene]))
-(define brushes (list paint-brush single-brush selection-brush line-brush))
+(define brushes (list paint-brush single-brush line-brush))
 (define cur-brush paint-brush)
 
 (define create-tile-btn (new button% [label "Create Tile"] [parent brush-hpanel] 
@@ -390,7 +392,7 @@
 
 (define (switch-brush b)
   (set! cur-brush b)
-  (send cur-brush set-tile cur-tile))
+  (unless (eq? cur-brush selection-brush) (send cur-brush set-tile cur-tile)))
 
 (define brush-paint-btn (new button% [label (send paint-brush get-name)] [parent brush-hpanel] 
   [callback (thunk* (switch-brush paint-brush))]))
