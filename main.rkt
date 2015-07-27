@@ -3,6 +3,7 @@
 (require racket/serialize ascii-canvas file/gzip file/gunzip "scene.rkt" "symbol.rkt" "brush.rkt" "point.rkt" "util.rkt" "generator.rkt")
 
 (define camera-pos (pt 0 0))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define tiles (list empty-tile))
@@ -11,8 +12,8 @@
 (define (set-cur-tile t)
   (set! cur-tile t)
   (send cur-brush set-tile t)
-  (send fg-canvas redraw)
-  (send bg-canvas redraw))
+  (send tile-fg-canvas redraw)
+  (send tile-bg-canvas redraw))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -31,6 +32,7 @@
 
 (define frame (new frame% [label "Scene Editor"] [style '(no-resize-border)]))
 (define brush-hpanel (new horizontal-panel% [parent frame]))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define menu-bar (new menu-bar% (parent frame)))
@@ -99,6 +101,7 @@
 (define load-menu (new menu-item% (label "Load") (parent file-menu) (callback load-callback)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define canvas (new (class ascii-canvas%
                       (super-new [parent frame] [width-in-characters canvas-width] [height-in-characters canvas-height])
                       
@@ -126,9 +129,9 @@
                         this)
                       
                       (define/override (on-event mouse-event) 
-                        (send cur-brush handle mouse-event)
-                        (when (eq? cur-brush selection-brush)
-                          (update-info-panel)))
+                        (let ([return-value (send cur-brush handle mouse-event)])
+                          (when (and (eq? cur-brush selection-brush) (not (eq? (void) return-value)))
+                            (update-info-panel return-value))))
                       
                       (define/public (get-width-in-chars) canvas-width)
                       
@@ -143,6 +146,7 @@
                                      (+ (pt-y camera-pos) (pt-y p)))))
                       
                       (define/public (draw) (scene-draw this scene) (send frame refresh)))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (change-scene s)
@@ -184,83 +188,11 @@
 (define tool-pane (new pane%
 	[parent frame]))
 
-(define info-panel (new horizontal-panel% [parent tool-pane]))
-
-(define (update-info-panel)
-  (define t (send cur-brush get-selected-tile))
-  (when (tile? t)
-    (send info-symbol-field set-selection (symbol->integer (tile-symbol t)))
-    (send info-descr-field set-value (tile-descr t))))
-
-(define info-vpanel (new vertical-panel% [parent info-panel]))
-(define info-symbol-field (new choice% [label "Symbol"] [choices cp437-strings] [parent info-vpanel]))
-(define info-descr-field (new text-field% [label "Description"] [parent info-vpanel]))
-
-(define info-bg (make-object color% 0 0 0 1.0))
-(define info-fg (make-object color% 0 0 0 1.0))
-
-(define info-fg-panel (new vertical-panel% [parent info-panel]))
-
-(define info-fg-msg (new message%
-                         (parent info-fg-panel)
-                         (label "Foreground")))
-
-(define info-fg-canvas (make-object (class canvas%
-                                      (super-new [parent info-fg-panel])
-                                      (define/public (color c)
-                                        (send this set-canvas-background c)
-                                        (send this redraw))
-                                      (define/public (redraw)
-                                        (send this refresh) (send this refresh-now)))))
-
-(define info-bg-panel (new vertical-panel% [parent info-panel]))
-
-(define info-bg-msg (new message%
-                         (parent info-bg-panel)
-                         (label "Background")))
-
-(define info-bg-canvas (make-object (class canvas%
-                                      (define/public (color c)
-                                        (send this set-canvas-background c)
-                                        (send this redraw))
-                                      (define/public (redraw)
-                                        (send this refresh) (send this refresh-now))
-                                      (super-new [parent info-bg-panel]))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(define paint-brush (new paint-brush% [canvas canvas] [scene scene]))
-(define single-brush (new single-brush% [canvas canvas] [scene scene]))
-(define selection-brush (new selection-brush% [canvas canvas] [scene scene] [bg-canvas info-bg-canvas] [fg-canvas info-fg-canvas]))
-(define line-brush (new line-brush% [canvas canvas] [scene scene]))
-(define brushes (list paint-brush single-brush selection-brush line-brush))
-(define cur-brush paint-brush)
-
-(define create-tile-btn (new button% [label "Create Tile"] [parent brush-hpanel] 
-                             [callback (thunk* 
-                                        (send creator-fg-canvas refresh-now)
-                                        (send creator-bg-canvas refresh-now)
-                                        (send creator-descr-field set-value creator-next-id)
-                                        (send creator-dialog show #t))]))
-
-(define (switch-brush b)
-  (set! cur-brush b)
-  (send cur-brush set-tile cur-tile)
-  (case (send cur-brush get-name)
-    [("View") (send tile-panel show #f) (send info-panel show #t)]
-    [else (send info-panel show #f) (send tile-panel show #t)]))
-
-(define brush-paint-btn (new button% [label (send paint-brush get-name)] [parent brush-hpanel] 
-	[callback (thunk* (switch-brush paint-brush))]))
-
-(define brush-single-btn (new button% [label "Single"] [parent brush-hpanel] 
-                              [callback (thunk* (switch-brush single-brush))]))
-
-(define brush-line-btn (new button% [label "Line"] [parent brush-hpanel] 
-                            [callback (thunk* (switch-brush line-brush))]))
-
-(define brush-selection-btn (new button% [label "Selector"] [parent brush-hpanel] 
-                                 [callback (thunk* (switch-brush selection-brush))]))
+(define (update-info-panel mouse-click-coords)
+  (let ([t (send scene get (pt-x mouse-click-coords) (pt-y mouse-click-coords))])
+    (when (tile? t)
+      (send tile-choices set-selection (send tile-choices find-string (tile-descr t)))
+      (change-tile tile-choices null))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -270,8 +202,8 @@
   (set-cur-tile (list-ref tiles (send choice get-selection)))
   (send symbol-field set-selection (symbol->integer (tile-symbol cur-tile)))
   (send descr-field set-value (tile-descr cur-tile))
-  (send fg-canvas refresh-now)
-  (send bg-canvas refresh-now))
+  (send tile-fg-canvas refresh-now)
+  (send tile-bg-canvas refresh-now))
 
 (define tile-choices (new choice% [label "Tiles"] [parent tile-panel] [choices (map tile-descr tiles)] [callback change-tile]))
 
@@ -288,8 +220,8 @@
       (send tile-choices append (tile-descr (list-ref tiles i))))
     (send tile-choices set-selection selection)
     (send cur-brush set-tile t)
-    (send fg-canvas refresh-now)
-    (send bg-canvas refresh-now)))
+    (send tile-fg-canvas refresh-now)
+    (send tile-bg-canvas refresh-now)))
 
 (define vpanel (new vertical-panel% [parent tile-panel]))
 (define symbol-field (new choice% [label "Symbol"] [choices cp437-strings] [parent vpanel] [callback update-tile!]))
@@ -301,7 +233,7 @@
                          (parent fg-color-panel)
                          (label "Foreground")))
 
-(define fg-canvas (make-object (class canvas%
+(define tile-fg-canvas (make-object (class canvas%
                                  (define/override (on-paint)
                                    (send this set-canvas-background (tile-fg cur-tile)))
                                  (define/public (redraw)
@@ -322,7 +254,7 @@
                          (parent bg-color-panel)
                          (label "Background")))
 
-(define bg-canvas (make-object (class canvas%
+(define tile-bg-canvas (make-object (class canvas%
                                  (define/public (redraw)
                                         (send this refresh) (send this refresh-now))
      (define/override (on-paint)
@@ -336,7 +268,7 @@
     (safe-get-color-from-user! "Background" frame (tile-bg cur-tile))
     (tile-descr cur-tile)))
   (send creator-bg-canvas redraw))
-
+  
 (define change-fg-btn (new button% [parent fg-color-panel] [label "Change Foreground"] 
   [callback change-fg-btn-callback]))
 
@@ -344,6 +276,7 @@
   [callback change-bg-btn-callback]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define creator-next-num 1)
 (define creator-next-id "")
 
@@ -428,22 +361,51 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define panels (list tile-panel info-panel))
+(define paint-brush (new paint-brush% [canvas canvas] [scene scene]))
+(define single-brush (new single-brush% [canvas canvas] [scene scene]))
+(define selection-brush (new selection-brush% [canvas canvas] [scene scene] [bg-canvas tile-bg-canvas] [fg-canvas tile-fg-canvas]))
+(define line-brush (new line-brush% [canvas canvas] [scene scene]))
+(define brushes (list paint-brush single-brush selection-brush line-brush))
+(define cur-brush paint-brush)
+
+(define create-tile-btn (new button% [label "Create Tile"] [parent brush-hpanel] 
+                             [callback (thunk* 
+                                        (send creator-fg-canvas refresh-now)
+                                        (send creator-bg-canvas refresh-now)
+                                        (send creator-descr-field set-value creator-next-id)
+                                        (send creator-dialog show #t))]))
+
+(define (switch-brush b)
+  (set! cur-brush b)
+  (send cur-brush set-tile cur-tile))
+
+(define brush-paint-btn (new button% [label (send paint-brush get-name)] [parent brush-hpanel] 
+  [callback (thunk* (switch-brush paint-brush))]))
+
+(define brush-single-btn (new button% [label "Single"] [parent brush-hpanel] 
+                              [callback (thunk* (switch-brush single-brush))]))
+
+(define brush-line-btn (new button% [label "Line"] [parent brush-hpanel] 
+                            [callback (thunk* (switch-brush line-brush))]))
+
+(define brush-selection-btn (new button% [label "Selector"] [parent brush-hpanel] 
+                                 [callback (thunk* (switch-brush selection-brush))]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (initialize)
   (generate-id)
+
   (send creator-fg-canvas redraw)
   (send creator-bg-canvas redraw)
 
-  (send fg-canvas min-height 50)
-  (send bg-canvas min-height 50)
+  (send tile-fg-canvas min-height 50)
+  (send tile-bg-canvas min-height 50)
 
-  (send fg-canvas redraw)
-  (send bg-canvas redraw)
+  (send tile-fg-canvas redraw)
+  (send tile-bg-canvas redraw)
     
-  (send info-panel show #f)
+  ;(send info-panel show #f)
   (send brush-hpanel set-alignment 'center 'center)
   
   (send descr-field set-value (tile-descr cur-tile))

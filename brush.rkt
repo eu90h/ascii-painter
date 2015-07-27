@@ -103,9 +103,11 @@
                              (when (eq? 'left-up (send mouse-event get-event-type))
                                (let ([p (send canvas clamp (send mouse-event get-x) (send mouse-event get-y))])
                                  (set! selected-tile (send scene get (pt-x p) (pt-y p)))
-                                 (send bg-canvas color (tile-bg selected-tile))
-                                 (send fg-canvas color (tile-fg selected-tile))
-                                 (set! x (pt-x p)) (set! y (pt-y p)))))))
+                                 (send bg-canvas set-canvas-background (tile-bg selected-tile))
+                                 (send fg-canvas set-canvas-background (tile-fg selected-tile))
+                                 (send bg-canvas redraw)
+                                 (send fg-canvas redraw)
+                                 p)))))
 
 (define line-brush% (class object%
                       (init-field canvas scene)
