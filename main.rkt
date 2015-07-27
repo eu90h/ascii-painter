@@ -22,7 +22,7 @@
 
 (define scene (new scene% [width canvas-width] [height canvas-height] [tile empty-tile]))
 
-(define (scene-draw canvas scene) (for* ([xi (in-range (sub1 canvas-width))] [yi (in-range (sub1 canvas-height))])
+(define (scene-draw canvas scene) (for* ([xi (in-range canvas-width)] [yi (in-range canvas-height)])
                                     (send canvas draw-tile (send scene get (+ (pt-x camera-pos) xi) (+ (pt-y camera-pos) yi))  xi  yi)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -104,16 +104,23 @@
                       
                       (field [x-scale (/ (send this get-width) canvas-width)])
                       (field [y-scale (/ (send this get-height) canvas-height)])
+                      (field [last-mouse-pt (pt 0 0)])
+
                       (define/public (set-scales x y) (set! x-scale x) (set! y-scale y))
                       (define/public (clamp mx my)
                         (pt (+ (pt-x camera-pos) (round (/ mx x-scale)))
                             (+ (pt-y camera-pos) (round (/ my y-scale)))))
-                      (define (too-low? x y) (or (< x 0) (< y 0)))
-                      (define (too-high? x y) (or (>= x (sub1 (send scene get-width))) (>= y (sub1 (send scene get-height)))))
-                      (define (valid-pos? p)
-                         (and (false? (too-low? (pt-x p) (pt-y p))) (false? (too-high? (pt-x p) (pt-y p)))))
+                 
+                      (define (within-scene-bounds? p)
+                        (let* ( [x (pt-x p)] [y (pt-y p)])
+                          (and (>= x 0) (>= y 0) (< x (sub1 (send scene get-width))) (< y  (send scene get-height)))))
+
+                      (define (valid-camera-pos? p)
+                          (and (within-scene-bounds? p) (within-scene-bounds? (pt-add p (pt canvas-width canvas-height)))))
+
                       (define (safe-add p)
-                        (if (valid-pos? (pt-add camera-pos p)) (pt-add camera-pos p) camera-pos))
+                        (if (valid-camera-pos? (pt-add camera-pos p)) (pt-add camera-pos p) camera-pos))
+
                       (define/override (on-char key-event)
                         (case (send key-event get-key-code)
                           [(escape) (if (eq? 'yes (message-box "Exit" "Are you sure you want to exit?" frame '(yes-no))) (exit) (void))]
@@ -124,14 +131,22 @@
                           [(right #\d) (set! camera-pos (safe-add  (pt 1 0))) (send this draw)])
                         this)
                       
-                      (define/override (on-event mouse-event) 
+                      (define/override (on-event mouse-event)
+                        (send frame refresh)
+                        (let ([p (send this clamp (send mouse-event get-x) (send mouse-event get-y))])
+                          (when (within-scene-bounds? p)
+                            (draw-tile (send scene get (pt-x last-mouse-pt) (pt-y last-mouse-pt)) (pt-x last-mouse-pt) (pt-y last-mouse-pt))
+                            
+                            (let ([q (pt-sub p camera-pos)]) (draw-tile cur-tile (pt-x q) (pt-y q)))
+                            (set! last-mouse-pt (pt-sub p camera-pos))
+                            ))
                         (let ([return-value (send cur-brush handle mouse-event)])
                                 (when (and (eq? cur-brush selection-brush) (not (eq? (void) return-value)))
                                     (update-info-panel return-value))))
                       
                       (define/public (get-width-in-chars) canvas-width)
 
-                      (define/public (draw-tile tile canvas-x canvas-y)  
+                      (define/public (draw-tile tile canvas-x canvas-y)
                         (send this write (tile-symbol tile) canvas-x canvas-y (tile-fg tile) (tile-bg tile)))
 
                       (define/public (draw-selected-tiles)
@@ -142,8 +157,8 @@
                           (define t (send scene get (pt-x p) (pt-y p)))
                           (send this draw-tile (tile (tile-symbol t) (make-object color% 255 255 0 1.0) (tile-bg t) (tile-descr t))
                             (+ (pt-x camera-pos) (pt-x p))
-                            (+ (pt-y camera-pos) (pt-y p))))
-                        (send frame refresh))
+                            (+ (pt-y camera-pos) (pt-y p)))))
+                   
                       (define/public (draw) (scene-draw this scene) (send frame refresh)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -245,7 +260,6 @@
     (tile-bg cur-tile)
     (tile-descr cur-tile)))
   (send creator-fg-canvas redraw))
-
 
 
 (define bg-color-panel (new vertical-panel% [parent tile-panel]))
