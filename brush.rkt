@@ -1,5 +1,5 @@
 #lang racket
-(provide paint-brush% single-brush% selection-brush% line-brush%)
+(provide paint-brush% single-brush% line-brush%)
 
 (require "scene.rkt" "util.rkt" "point.rkt")
 
@@ -70,44 +70,6 @@
                            [(left-up) (set! drawing? #f) (send canvas draw)]
                            [(right-down) (set! drawing? #f) (set! removing #t)]
                            [(right-up) (set! removing #f) (send canvas draw)]))))
-
-(define selection-brush% (class object%
-                           (init-field canvas scene bg-canvas fg-canvas)
-                           
-                           (field (tile empty-tile))
-                           (field (selected-tile null))
-                           (field (x 0))
-                           (field (y 0))
-                           
-                           (super-new)
-                           
-                           (define/public (get-name) "View")
-
-                           (define/public (set-scene c) (set! scene c))
-                           
-                           (define/public (set-tile t) (set! tile t))
-                           
-                           (define/public (get-tile) tile)
-                           
-                           (define/public (set-canvas c) (set! canvas c))
-                           
-                           (define/public (get-selected-tile) selected-tile)
-                           
-                           (define/public (get-x) x)
-                           
-                           (define/public (get-y) y)
-                           
-                           (define/public (get-selected-points) (list (pt x y)))
-                           
-                           (define/public (handle mouse-event)
-                             (when (eq? 'left-up (send mouse-event get-event-type))
-                               (let ([p (send canvas clamp (send mouse-event get-x) (send mouse-event get-y))])
-                                 (set! selected-tile (send scene get (pt-x p) (pt-y p)))
-                                 (send bg-canvas set-canvas-background (tile-bg selected-tile))
-                                 (send fg-canvas set-canvas-background (tile-fg selected-tile))
-                                 (send bg-canvas redraw)
-                                 (send fg-canvas redraw)
-                                 p)))))
 
 (define line-brush% (class object%
                       (init-field canvas scene)
