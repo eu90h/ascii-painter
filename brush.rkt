@@ -115,8 +115,7 @@
                       (field (tile empty-tile))
                       
                       (field (selected-points null))
-                      (field (selected-tiles null))
-              
+                      (field [drawing #f])
                       (field (origin-pt (pt 0 0)))
                       
                       (super-new)
@@ -131,8 +130,6 @@
                       
                       (define/public (get-selected-points) selected-points)
                       
-                      (define/public (get-selected-tiles) selected-tiles)
-                      
                       (define (change-tile x y) (send scene set x y tile))
                       
                       (define (pt-change-tile p) (send scene set (pt-x p) (pt-y p) tile) (send canvas draw))
@@ -140,10 +137,21 @@
                       (define (get-tile p) (send scene get (pt-x p) (pt-y p)))
                       
                       (define (change-tiles pts) (map (lambda (p) (change-tile (pt-x p) (pt-y p))) pts))
-                      
+
+                      (define (select-tile x y) 
+                          (set! selected-points (append selected-points (list (pt x y)))))
+
                       (define/public (handle mouse-event)
+                        (set! selected-points null)
                         (case (send mouse-event get-event-type)
-                          [(left-down) (set! origin-pt (evt-clamp canvas mouse-event)) 
+                          [(left-down) (set! drawing #t) (set! origin-pt (evt-clamp canvas mouse-event)) 
                                        (pt-change-tile origin-pt)]
-                          [(left-up) (trace-line change-tile origin-pt (evt-clamp canvas mouse-event)) (send canvas draw)]))))
+                          [(left-up) (set! drawing #f) 
+                          (trace-line change-tile origin-pt (evt-clamp canvas mouse-event)) (send canvas draw)]
+                          [else 
+                          (when drawing
+                            (trace-line select-tile origin-pt 
+                              (evt-clamp canvas mouse-event))
+                            (send canvas draw-selected-tiles))
+                            (void)]))))
 

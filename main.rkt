@@ -22,11 +22,8 @@
 
 (define scene (new scene% [width canvas-width] [height canvas-height] [tile empty-tile]))
 
-(define (draw-tile canvas tile canvas-x canvas-y)  
-  (send canvas write (tile-symbol tile) canvas-x canvas-y (tile-fg tile) (tile-bg tile)))
-
 (define (scene-draw canvas scene) (for* ([xi (in-range (sub1 canvas-width))] [yi (in-range (sub1 canvas-height))])
-                                    (draw-tile canvas (send scene get (+ (pt-x camera-pos) xi) (+ (pt-y camera-pos) yi))  xi  yi)))
+                                    (send canvas draw-tile (send scene get (+ (pt-x camera-pos) xi) (+ (pt-y camera-pos) yi))  xi  yi)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -111,10 +108,9 @@
                       (define/public (clamp mx my)
                         (pt (+ (pt-x camera-pos) (round (/ mx x-scale)))
                             (+ (pt-y camera-pos) (round (/ my y-scale)))))
-                         (define (too-low? x y) (or (< x 0) (< y 0)))
-                        (define (too-high? x y) (or (>= x (sub1 (send scene get-width))) (>= y (sub1 (send scene get-height)))))
+                      (define (too-low? x y) (or (< x 0) (< y 0)))
+                      (define (too-high? x y) (or (>= x (sub1 (send scene get-width))) (>= y (sub1 (send scene get-height)))))
                       (define (valid-pos? p)
-                     
                          (and (false? (too-low? (pt-x p) (pt-y p))) (false? (too-high? (pt-x p) (pt-y p)))))
                       (define (safe-add p)
                         (if (valid-pos? (pt-add camera-pos p)) (pt-add camera-pos p) camera-pos))
@@ -130,21 +126,24 @@
                       
                       (define/override (on-event mouse-event) 
                         (let ([return-value (send cur-brush handle mouse-event)])
-                          (when (and (eq? cur-brush selection-brush) (not (eq? (void) return-value)))
-                            (update-info-panel return-value))))
+                                (when (and (eq? cur-brush selection-brush) (not (eq? (void) return-value)))
+                                    (update-info-panel return-value))))
                       
                       (define/public (get-width-in-chars) canvas-width)
-                      
+
+                      (define/public (draw-tile tile canvas-x canvas-y)  
+                        (send this write (tile-symbol tile) canvas-x canvas-y (tile-fg tile) (tile-bg tile)))
+
                       (define/public (draw-selected-tiles)
+                        (scene-draw this scene)
                         (define selected-points (send cur-brush get-selected-points))
-                        (define selected-tiles (send cur-brush get-selected-tiles))
-                        
-                        (for ([i (in-range (length selected-tiles))])
-                          (define t (list-ref selected-tiles i))
+                        (for ([i (in-range (length selected-points))])
                           (define p (list-ref selected-points i))
-                          (draw-tile canvas (tile (tile-symbol t) (tile-bg t) (tile-fg t) (tile-descr t)) (+ (pt-x camera-pos) (pt-x p))
-                                     (+ (pt-y camera-pos) (pt-y p)))))
-                      
+                          (define t (send scene get (pt-x p) (pt-y p)))
+                          (send this draw-tile (tile (tile-symbol t) (make-object color% 255 255 0 1.0) (tile-bg t) (tile-descr t))
+                            (+ (pt-x camera-pos) (pt-x p))
+                            (+ (pt-y camera-pos) (pt-y p))))
+                        (send frame refresh))
                       (define/public (draw) (scene-draw this scene) (send frame refresh)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -405,7 +404,6 @@
   (send tile-fg-canvas redraw)
   (send tile-bg-canvas redraw)
     
-  ;(send info-panel show #f)
   (send brush-hpanel set-alignment 'center 'center)
   
   (send descr-field set-value (tile-descr cur-tile))
