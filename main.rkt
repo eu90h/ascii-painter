@@ -307,6 +307,16 @@
                                  (define/public (redraw)
                                         (send this refresh) (send this refresh-now))
                                  (super-new [parent fg-color-panel]))))
+(define (change-fg-btn-callback btn evt)
+  (set-cur-tile
+  (tile (tile-symbol cur-tile)
+    (safe-get-color-from-user! "Foreground" frame (tile-fg cur-tile))
+    (tile-bg cur-tile)
+    (tile-descr cur-tile)))
+  (send creator-fg-canvas redraw))
+
+
+
 (define bg-color-panel (new vertical-panel% [parent tile-panel]))
 (define tile-bg-msg (new message%
                          (parent bg-color-panel)
@@ -318,6 +328,20 @@
      (define/override (on-paint)
        (send this set-canvas-background (tile-bg cur-tile)))
                                  (super-new [parent bg-color-panel]))))
+
+(define (change-bg-btn-callback btn evt)
+  (set-cur-tile
+  (tile (tile-symbol cur-tile)
+    (tile-fg cur-tile)
+    (safe-get-color-from-user! "Background" frame (tile-bg cur-tile))
+    (tile-descr cur-tile)))
+  (send creator-bg-canvas redraw))
+
+(define change-fg-btn (new button% [parent fg-color-panel] [label "Change Foreground"] 
+  [callback change-fg-btn-callback]))
+
+(define change-bg-btn (new button% [parent bg-color-panel] [label "Change Background"] 
+  [callback change-bg-btn-callback]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define creator-next-num 1)
@@ -366,7 +390,7 @@
 
 (define creator-bg-button (new button% [label "BG Color"] [parent creator-bg-panel] 
                                [callback (thunk* (set! creator-bg-color
-                                                       (safe-get-color-from-user! "Background" frame creator-fg-color))
+                                                       (safe-get-color-from-user! "Background" frame creator-bg-color))
                                                  (send creator-bg-canvas redraw))]))
 
 (define (add-tile-callback btn evt)
@@ -412,6 +436,9 @@
   (generate-id)
   (send creator-fg-canvas redraw)
   (send creator-bg-canvas redraw)
+
+  (send fg-canvas min-height 50)
+  (send bg-canvas min-height 50)
 
   (send fg-canvas redraw)
   (send bg-canvas redraw)
