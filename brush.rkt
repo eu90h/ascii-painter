@@ -77,6 +77,9 @@
 
   (define/public (handle mouse-event)
     (when (true? drawing) (change-tile (send mouse-event get-x) (send mouse-event get-y))
+      (displayln 
+        (string-append 
+          (number->string (send mouse-event get-x)) ", " (number->string (send mouse-event get-y))))
       (send canvas draw))
     (when (true? removing) (remove-tile (send mouse-event get-x) (send mouse-event get-y))
       (send canvas draw))
@@ -118,9 +121,13 @@
   (define (select-tile x y) 
       (set! selected-points (append selected-points (list (pt x y)))))
 
+  (define (good-xy? x y) 
+    (and (>= x 0) (>= y 0) (< x (send scene get-width)) (< y (send scene get-height))))
+
   (define (set-and-accumulate x y)
-    (set! tiles (append tiles (list (list (send scene get x y) x y))))
-    (change-tile x y))
+    (when (good-xy? x y)
+      (set! tiles (append tiles (list (list (send scene get x y) x y))))
+      (change-tile x y)))
 
   (define/public (handle mouse-event)
     (set! selected-points null)
