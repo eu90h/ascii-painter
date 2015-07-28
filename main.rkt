@@ -177,7 +177,8 @@
   (field [last-mouse-pt (pt 0 0)])
 
   (define/public (set-scales x y) (set! x-scale x) (set! y-scale y))
-  (define/public (set-scene-intervals x y) (set! x-interval x) (set! y-interval y))
+  (define/public (set-canvas-boundary x y) (set! x-interval x) (set! y-interval y))
+  (define/public (set-scene-intervals x y) (set! scene-x-interval x) (set! scene-y-interval y))
   (define/public (clamp mx my)
     (let ([camera-pos (send camera get-position)])
       (pt (+ (pt-x camera-pos) (floor (/ mx x-scale)))
@@ -197,15 +198,15 @@
   (define/override (on-event mouse-event)
     (let ([p (send this clamp (send mouse-event get-x) (send mouse-event get-y))])
       (when (pt-within-bounds? p scene-x-interval scene-y-interval)
-        (draw-tile
-          (send scene get (pt-x last-mouse-pt) (pt-y last-mouse-pt)) (pt-x last-mouse-pt) (pt-y last-mouse-pt))
         (let* ([camera-pos (send camera get-position)] [q (pt-sub p camera-pos)]) 
-          (draw-tile (if (eq? cur-brush selection-brush) selection-tile cur-tile) (pt-x q) (pt-y q))
+         (draw-tile (if (eq? cur-brush selection-brush) selection-tile cur-tile) (pt-x last-mouse-pt) (pt-y last-mouse-pt))
+        (when (eq? cur-brush line-brush) (draw-selected-tiles))
           (send frame refresh)
-        (set! last-mouse-pt (pt-sub p camera-pos)))))
+          (set! last-mouse-pt q))))
     (unless (eq? cur-brush selection-brush) 
       (send cur-brush handle mouse-event) 
-      (set! history (history-add-actions history (send cur-brush get-history)))))
+      (set! history (history-add-actions history (send cur-brush get-history)))
+      (send this draw)))
 
   (define/public (get-width-in-chars) canvas-width)
 
@@ -217,17 +218,21 @@
       (send this write (tile-symbol tile) canvas-x canvas-y (tile-fg tile) (tile-bg tile))))
 
   (define/public (draw-selected-tiles)
-    (scene-draw this scene)
+    (draw-tile (if (eq? cur-brush selection-brush) selection-tile cur-tile) (pt-x last-mouse-pt) (pt-y last-mouse-pt))
     (define selected-points (send cur-brush get-selected-points))
     (define camera-pos (send camera get-position))
     (for ([i (in-range (length selected-points))])
       (define p (list-ref selected-points i))
       (define t (send scene get (pt-x p) (pt-y p)))
       (send this draw-tile (tile (tile-symbol t) (make-object color% 255 255 0 1.0) (tile-bg t) (tile-descr t))
-        (+ (pt-x camera-pos) (pt-x p))
-        (+ (pt-y camera-pos) (pt-y p)))))
+        (- (pt-x p) (pt-x camera-pos))
+        (- (pt-y p) (pt-y camera-pos)))))
 
-  (define/public (draw) (scene-draw this scene) (send frame refresh)))))
+  (define/public (draw) 
+    (scene-draw this scene)
+    (draw-tile (if (eq? cur-brush selection-brush) selection-tile cur-tile) (pt-x last-mouse-pt) (pt-y last-mouse-pt))
+    (when (eq? cur-brush line-brush) (draw-selected-tiles))  
+    (send frame refresh)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -398,6 +403,7 @@
   (send frame show #t)
 
   (send canvas set-scales (/ (send canvas get-width) canvas-width) (/ (send canvas get-height) canvas-height))
+  (send canvas set-canvas-boundary (interval 0 (sub1 canvas-width)) (interval 0 (sub1 canvas-height)))
   (send canvas draw))
 
 (initialize)

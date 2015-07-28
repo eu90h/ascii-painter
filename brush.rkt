@@ -1,7 +1,7 @@
 #lang racket
 (provide paint-brush% single-brush% line-brush% brush-interface)
 
-(require "scene.rkt" "util.rkt" "point.rkt" "history.rkt")
+(require "scene.rkt" "util.rkt" "point.rkt" "history.rkt" "interval.rkt")
 
 (define brush-interface (interface () get-name set-scene set-tile set-canvas handle get-history set-history)) 
 
@@ -68,10 +68,15 @@
   (define (remove-tile x y) 
     (let ([p (send canvas clamp x y)])
       (set! history (set-and-add-to-history history scene (pt-x p) (pt-y p) empty-tile))))
-   
+
+  (define (good-xy? x y) 
+    (and (number-in-interval? x (interval 0 (sub1 (send scene get-width))))
+      (number-in-interval? y (interval 0 (sub1 (send scene get-height))))))
+
   (define (change-tile x y)
     (let ([p (send canvas clamp x y)])
-      (set! history (set-and-add-to-history history scene (pt-x p) (pt-y p) tile))))
+        (when (good-xy? (pt-x p) (pt-y p))
+      (set! history (set-and-add-to-history history scene (pt-x p) (pt-y p) tile)))))
 
   (define true? (compose not false?))
 
@@ -117,9 +122,11 @@
 
   (define (select-tile x y) 
       (set! selected-points (append selected-points (list (pt x y)))))
-
   (define (good-xy? x y) 
-    (and (>= x 0) (>= y 0) (< x (send scene get-width)) (< y (send scene get-height))))
+    (and (number-in-interval? x 
+      (interval 0 (send scene get-width))) (number-in-interval? y (interval 0 (send scene get-height)))))
+;  (define (good-xy? x y) 
+ ;   (and (>= x 0) (>= y 0) (< x (send scene get-width)) (< y (send scene get-height))))
 
   (define (set-and-accumulate x y)
     (when (good-xy? x y)
