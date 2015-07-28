@@ -49,7 +49,8 @@
                         (begin (apply-callback (inexact->exact x) (inexact->exact y))
                                (f (+ y y-step) (- e 1.0)))
                         (list (next x) y e))))))
-    (loop (pt-x p) (pt-y p) error)))
+    (loop (pt-x p) (pt-y p) error)
+    (apply-callback (pt-x q) (pt-y q))))
   (cond [(> (pt-x p) (pt-x q)) (trace-line callback q p)]
     [(zero? dx) (trace-column apply-callback (pt-x p) (pt-y p) (pt-y q))]
     [(zero? dy) (trace-row apply-callback (pt-y p) (pt-x p) (pt-x q))]
