@@ -21,11 +21,11 @@
 	(define/public (get-selected-points) null)
 
 	(define (change-tile x y) 
-    (let ([p (send canvas clamp x y)]) (set-and-add-to-history scene (pt-x p) (pt-y p) tile));(send scene set (pt-x p) (pt-y p) tile))
+    (let ([p (send canvas clamp x y)]) (set-and-add-to-history scene (pt-x p) (pt-y p) tile))
     (send canvas draw))
 
   (define (remove-tile x y) 
-    (let ([p (send canvas clamp x y)]) (set-and-add-to-history scene (pt-x p) (pt-y p) empty-tile));(send scene set (pt-x p) (pt-y p) empty-tile))
+    (let ([p (send canvas clamp x y)]) (set-and-add-to-history scene (pt-x p) (pt-y p) empty-tile))
     (send canvas draw))
 	
   (define/public (handle mouse-event)
@@ -54,10 +54,10 @@
                        (define/public (get-selected-tiles) null)
                        
                        (define (remove-tile x y) 
-                         (let ([p (send canvas clamp x y)]) (set-and-add-to-history scene (pt-x p) (pt-y p) empty-tile)));(send scene set (pt-x p) (pt-y p) empty-tile)))
+                         (let ([p (send canvas clamp x y)]) (set-and-add-to-history scene (pt-x p) (pt-y p) empty-tile)))
                        
                        (define (change-tile x y)
-                         (let ([p (send canvas clamp x y)]) (set-and-add-to-history scene (pt-x p) (pt-y p) tile)));(send scene set (pt-x p) (pt-y p) tile)))
+                         (let ([p (send canvas clamp x y)]) (set-and-add-to-history scene (pt-x p) (pt-y p) tile)))
                        
                        (define true? (compose not false?))
                        (define/public (handle mouse-event)
@@ -93,7 +93,7 @@
                       
                       (define/public (get-selected-points) selected-points)
                       
-                      (define (change-tile x y) (set-and-add-to-history scene x y tile));(send scene set x y tile))
+                      (define (change-tile x y) (set-and-add-to-history scene x y tile))
                       
                       (define (pt-change-tile p) (send scene set (pt-x p) (pt-y p) tile) (send canvas draw))
                       
