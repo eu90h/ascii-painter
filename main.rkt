@@ -13,6 +13,8 @@
 
 (define selection-tile (tile #\X (make-object color% 255 255 0 1.0) (make-object color% 0 0 0 1.0) "Crosshair"))
 
+(define tiles (list empty-tile))
+
 (define cur-tile empty-tile)
 (define cur-tile-table-offset '(0 0))
 
@@ -25,7 +27,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define canvas-width 60)
-(define canvas-height 30)
+(define canvas-height 35)
 
 (define scene (new scene% [width canvas-width] [height canvas-height] [tile empty-tile]))
 
@@ -203,34 +205,34 @@
   (map (lambda (b) (send b set-scene s)) brushes)
   (send canvas draw))
 
-;(define (fill-generator-callback menu evt)
-;  (let ([fill-generator (make-object fill-generator% scene canvas tiles)])
-;    (send fill-generator process)
-;    (change-scene (send fill-generator get-scene))))
+(define (fill-generator-callback menu evt)
+  (let ([fill-generator (make-object fill-generator% scene canvas tiles)])
+    (send fill-generator process)
+    (change-scene (send fill-generator get-scene))))
 
-;(define fill-generator-menu (new menu-item% (label "Fill") (parent generator-menu) (callback fill-generator-callback)))
+(define fill-generator-menu (new menu-item% (label "Fill") (parent generator-menu) (callback fill-generator-callback)))
 
-;(define (uniform-random-fill-generator-callback menu evt)
-;  (let ([gen (make-object uniform-random-fill-generator% scene canvas tiles 10)])
-;    (send gen process)
-;    (send canvas draw)))
+(define (uniform-random-fill-generator-callback menu evt)
+  (let ([gen (make-object uniform-random-fill-generator% scene canvas tiles 10)])
+    (send gen process)
+    (send canvas draw)))
 
-;(define uniform-random-fill-generator-menu (new menu-item% (label "Randomly Place") (parent generator-menu) (callback uniform-random-fill-generator-callback)))
-;(define rooms null)
-;(define (rectangle-generator-callback menu evt)
-;  (let ([gen (make-object rectangle-generator% scene canvas tiles rooms)])
- ;   (send gen process)
- ;   (set! rooms (append rooms (list (send gen get-room))))
- ;   (send canvas draw)))
+(define uniform-random-fill-generator-menu (new menu-item% (label "Randomly Place") (parent generator-menu) (callback uniform-random-fill-generator-callback)))
+(define rooms null)
+(define (rectangle-generator-callback menu evt)
+  (let ([gen (make-object rectangle-generator% scene canvas tiles rooms)])
+    (send gen process)
+    (set! rooms (append rooms (list (send gen get-room))))
+    (send canvas draw)))
 
-;(define rectangle-generator-menu (new menu-item% (label "Rectangle") (parent generator-menu) (callback rectangle-generator-callback)))
+(define rectangle-generator-menu (new menu-item% (label "Rectangle") (parent generator-menu) (callback rectangle-generator-callback)))
 
-;(define (room-connector-generator-callback menu evt)
- ; (let ([gen (make-object room-connector-generator% scene canvas tiles rooms (length rooms))])
-  ;  (send gen process)
-   ; (send canvas draw)))
+(define (room-connector-generator-callback menu evt)
+  (let ([gen (make-object room-connector-generator% scene canvas tiles rooms (length rooms))])
+    (send gen process)
+    (send canvas draw)))
 
-; (define room-connector-generator-menu (new menu-item% (label "Room Connector") (parent generator-menu) (callback room-connector-generator-callback)))
+ (define room-connector-generator-menu (new menu-item% (label "Room Connector") (parent generator-menu) (callback room-connector-generator-callback)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -276,6 +278,43 @@
 
 (define change-bg-btn (new button% [parent bg-color-panel] [label "Change Background"] 
   [callback change-bg-btn-callback]))
+
+(define tile-library-panel (new vertical-panel% [parent canvas-left-panel] [style (list 'border)]))
+(define tile-choices (new choice% [parent tile-library-panel] [label "Saved Tiles"] [choices (map tile-descr tiles)]))
+
+(define save-tile-btn-callback (thunk*
+  (define dialog (new dialog% [label "Save Tile"]))
+  (define hpanel (new horizontal-panel% [parent dialog]))
+  (define name-field (new text-field% [label "Enter a tile name"] [parent hpanel]))
+
+  (define save-tile (thunk*
+    (let* ([name (send name-field get-value)] [t (tile (tile-symbol cur-tile) (tile-fg cur-tile) (tile-bg cur-tile) name)])
+      (set! tiles (append tiles (list t)))
+      (send tile-choices append name)
+      (send dialog show #f))))
+   
+   (define ok-btn (new button% [label "OK"] [parent hpanel] [callback save-tile]))
+   (send dialog show #t)))
+
+(define save-tile-btn (new button% [parent tile-library-panel] [label "Save Current Tile"]
+  [callback save-tile-btn-callback]))
+
+(define remove-tile-btn-callback (thunk*
+  (define (get-index l v)
+    (define (iter l i) 
+      (if (null? l) -1 
+        (if (eq? (tile-descr (first l)) v) i 
+          (iter (rest l) (add1 i)))))
+    (iter l 0))
+
+  (let* ([t (list-ref tiles (get-index tiles (send tile-choices get-string-selection)))]
+    [remove? (eq? 'yes 
+      (message-box "Exit" (string-append "Are you sure you want to remove " (tile-descr t)) frame '(yes-no)))])
+    (when remove? (send tile-choices delete (send tile-choices get-selection))))
+  (void)))
+
+(define remove-tile-btn (new button% [parent tile-library-panel] [label "Delete Selected Tile"]
+  [callback remove-tile-btn-callback]))
 
 (define (safe-get-color-from-user! label parent default-color)
   (let ([c (get-color-from-user label parent default-color)])
