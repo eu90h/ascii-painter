@@ -3,7 +3,7 @@
 
 (require "scene.rkt" "util.rkt" "point.rkt" "history.rkt")
 
-(define brush-interface (interface () get-name set-scene set-tile set-canvas handle)) 
+(define brush-interface (interface () get-name set-scene set-tile set-canvas handle get-history set-history)) 
 
 (define single-brush% (class* object% (brush-interface)
 	(init-field canvas scene)
