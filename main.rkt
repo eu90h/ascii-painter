@@ -22,8 +22,19 @@
 (define (set-cur-tile t)
   (set! cur-tile t)
   (unless (eq? cur-brush selection-brush) (send cur-brush set-tile t))
+
+  (set! fg-color (tile-fg t))
+  (set! bg-color (tile-bg t))
+
   (send tile-fg-canvas redraw)
   (send tile-bg-canvas redraw))
+
+(define (get-tile-index l v)
+    (define (iter l i) 
+      (if (null? l) -1 
+        (if (eq? (tile-descr (first l)) v) i 
+          (iter (rest l) (add1 i)))))
+    (iter l 0))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -61,7 +72,7 @@
     (let ([w (string->number (send width-field get-value))] 
         [h (string->number (send height-field get-value))]
         [t (choice->tile (send tile-choices get-selection))])
-      (change-scene (new scene% [width w] [height h] [tile t])))
+      (change-scene (new scene% [width w] [height h] [tile t]))))
 
    (define ok-btn (new button% [label "OK"] [parent hpanel] [callback make-new-scene]))
    (send dialog show #t))
@@ -148,7 +159,7 @@
     (for* ([x (in-range width)] [y (in-range height)])
       (draw-tile (symbol-table-lookup x y) x y))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define canvas (new (class ascii-canvas%
   (super-new [parent canvas-panel] [width-in-characters canvas-width] [height-in-characters canvas-height])
@@ -299,7 +310,10 @@
   [callback change-bg-btn-callback]))
 
 (define tile-library-panel (new vertical-panel% [parent canvas-left-panel] [style (list 'border)]))
-(define tile-choices (new choice% [parent tile-library-panel] [label "Saved Tiles"] [choices (map tile-descr tiles)]))
+(define tile-choices-callback (thunk*
+   (set-cur-tile (list-ref tiles (get-tile-index tiles (send tile-choices get-string-selection))))))
+(define tile-choices (new choice% [parent tile-library-panel] [label "Saved Tiles"] [choices (map tile-descr tiles)]
+  [callback tile-choices-callback]))
 
 (define save-tile-btn-callback (thunk*
   (define dialog (new dialog% [label "Save Tile"]))
@@ -310,6 +324,7 @@
     (let* ([name (send name-field get-value)] [t (tile (tile-symbol cur-tile) (tile-fg cur-tile) (tile-bg cur-tile) name)])
       (set! tiles (append tiles (list t)))
       (send tile-choices append name)
+      (send tile-choices set-selection (sub1 (length tiles)))
       (send dialog show #f))))
    
    (define ok-btn (new button% [label "OK"] [parent hpanel] [callback save-tile]))
@@ -319,14 +334,7 @@
   [callback save-tile-btn-callback]))
 
 (define remove-tile-btn-callback (thunk*
-  (define (get-index l v)
-    (define (iter l i) 
-      (if (null? l) -1 
-        (if (eq? (tile-descr (first l)) v) i 
-          (iter (rest l) (add1 i)))))
-    (iter l 0))
-
-  (let* ([t (list-ref tiles (get-index tiles (send tile-choices get-string-selection)))]
+  (let* ([t (list-ref tiles (get-tile-index tiles (send tile-choices get-string-selection)))]
     [remove? (eq? 'yes 
       (message-box "Exit" (string-append "Are you sure you want to remove " (tile-descr t)) frame '(yes-no)))])
     (when remove? (send tile-choices delete (send tile-choices get-selection))))
