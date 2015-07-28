@@ -121,8 +121,8 @@
   (define/public (set-scales x y) (set! x-scale x) (set! y-scale y))
 
   (define/public (clamp mx my)
-    (pt (round (/ mx x-scale))
-        (round (/ my y-scale))))
+    (pt (floor (/ mx x-scale))
+        (floor (/ my y-scale))))
 
   (define (process-tiles fn) (for* ([x (in-range 16)] [y (in-range 16)])
     (set x y (fn (send this symbol-table-lookup x y)))))
@@ -170,8 +170,8 @@
 
   (define/public (set-scales x y) (set! x-scale x) (set! y-scale y))
   (define/public (clamp mx my)
-    (pt (+ (pt-x camera-pos) (round (/ mx x-scale)))
-        (+ (pt-y camera-pos) (round (/ my y-scale)))))
+    (pt (+ (pt-x camera-pos) (floor (/ mx x-scale)))
+        (+ (pt-y camera-pos) (floor (/ my y-scale)))))
 
   (define (within-scene-bounds? p)
     (let* ( [x (pt-x p)] [y (pt-y p)])
