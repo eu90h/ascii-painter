@@ -136,14 +136,14 @@
                         this)
                       
                       (define/override (on-event mouse-event)
-                        (send frame refresh)
                         (let ([p (send this clamp (send mouse-event get-x) (send mouse-event get-y))])
                           (when (within-scene-bounds? p)
                             (draw-tile
                               (send scene get (pt-x last-mouse-pt) (pt-y last-mouse-pt)) (pt-x last-mouse-pt) (pt-y last-mouse-pt))
-                            
+
                             (let ([q (pt-sub p camera-pos)]) 
-                              (draw-tile  (if (eq? cur-brush selection-brush) selection-tile cur-tile) (pt-x q) (pt-y q))
+                              (draw-tile (if (eq? cur-brush selection-brush) selection-tile cur-tile) (pt-x q) (pt-y q))
+                              (send frame refresh)
                               (when (eq? cur-brush selection-brush) (update-info-panel q)))
 
                             (set! last-mouse-pt (pt-sub p camera-pos))))
@@ -249,16 +249,15 @@
 
 (define fg-color-panel (new vertical-panel% [parent tile-panel]))
 
-(define tile-fg-msg (new message%
-                         (parent fg-color-panel)
-                         (label "Foreground")))
+(define tile-fg-msg (new message% [parent fg-color-panel] [label "Foreground"]))
 
 (define tile-fg-canvas (make-object (class canvas%
-                                 (define/override (on-paint)
-                                   (send this set-canvas-background (tile-fg cur-tile)))
-                                 (define/public (redraw)
-                                        (send this refresh) (send this refresh-now))
-                                 (super-new [parent fg-color-panel]))))
+  (define/override (on-paint)
+    (send this set-canvas-background (tile-fg cur-tile)))
+  (define/public (redraw)
+    (send this refresh) (send this refresh-now))
+  (super-new [parent fg-color-panel]))))
+
 (define (change-fg-btn-callback btn evt)
   (set-cur-tile
   (tile (tile-symbol cur-tile)
@@ -269,16 +268,15 @@
 
 
 (define bg-color-panel (new vertical-panel% [parent tile-panel]))
-(define tile-bg-msg (new message%
-                         (parent bg-color-panel)
-                         (label "Background")))
+
+(define tile-bg-msg (new message% [parent bg-color-panel] [label "Background"]))
 
 (define tile-bg-canvas (make-object (class canvas%
-                                 (define/public (redraw)
-                                        (send this refresh) (send this refresh-now))
-     (define/override (on-paint)
-       (send this set-canvas-background (tile-bg cur-tile)))
-                                 (super-new [parent bg-color-panel]))))
+  (define/public (redraw)
+    (send this refresh) (send this refresh-now))
+  (define/override (on-paint)
+    (send this set-canvas-background (tile-bg cur-tile)))
+  (super-new [parent bg-color-panel]))))
 
 (define (change-bg-btn-callback btn evt)
   (set-cur-tile
@@ -295,10 +293,14 @@
   [callback change-bg-btn-callback]))
 
 (define (delete-tile-btn-callback btn evt)
+  (let ([item-to-remove (send tile-choices get-string (send tile-choices get-selection))])
+    (set! tiles (filter (lambda (t) (not (eq? (tile-descr t) item-to-remove))) tiles)))
   (send tile-choices delete (send tile-choices get-selection))
   (set-cur-tile (list-ref tiles (send tile-choices get-selection)))
   (send symbol-field set-selection (symbol->integer (tile-symbol cur-tile)))
-  (send descr-field set-value (tile-descr cur-tile)))
+  (send descr-field set-value (tile-descr cur-tile))
+  (set! creator-next-num (if (>= creator-next-num 2) (- creator-next-num 2) 1))
+  (generate-id))
 
 (define delete-tile-btn (new button% [parent tile-panel] [label "Delete Tile"]
   [callback delete-tile-btn-callback]))
