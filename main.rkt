@@ -128,7 +128,7 @@
                           [(menu release) (void)]
                           [(control) (set! holding-control (not holding-control))]
                           [(escape) (if (eq? 'yes (message-box "Exit" "Are you sure you want to exit?" frame '(yes-no))) (exit) (void))]
-                          [(#\z) (when holding-control (undo-last-action scene) (send this draw))]
+                          [(#\z)  (undo-last-action scene) (send this draw)]
                           [(up #\w) (set! camera-pos (safe-add  (pt 0 -1))) (send this draw)]
                           [(left #\a) (set! camera-pos (safe-add  (pt -1 0))) (send this draw)]
                           [(down #\s) (set! camera-pos (safe-add  (pt 0 1))) (send this draw)]

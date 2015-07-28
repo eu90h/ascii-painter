@@ -80,7 +80,8 @@
                       (field (selected-points null))
                       (field [drawing #f])
                       (field (origin-pt (pt 0 0)))
-                      
+                      (field [tiles null])
+
                       (super-new)
                       
                       (define/public (get-name) "Line")
@@ -93,7 +94,7 @@
                       
                       (define/public (get-selected-points) selected-points)
                       
-                      (define (change-tile x y) (set-and-add-to-history scene x y tile))
+                      (define (change-tile x y) (send scene set x y tile))
                       
                       (define (pt-change-tile p) (send scene set (pt-x p) (pt-y p) tile) (send canvas draw))
                       
@@ -104,13 +105,19 @@
                       (define (select-tile x y) 
                           (set! selected-points (append selected-points (list (pt x y)))))
 
+                      (define (set-and-accumulate x y)
+                        (set! tiles (append tiles (list (list (send scene get x y) x y))))
+                        (change-tile x y))
+
                       (define/public (handle mouse-event)
                         (set! selected-points null)
                         (case (send mouse-event get-event-type)
-                          [(left-down) (set! drawing #t) (set! origin-pt (evt-clamp canvas mouse-event)) 
-                                       (pt-change-tile origin-pt)]
+                          [(left-down) (set! drawing #t) (set! origin-pt (evt-clamp canvas mouse-event))]
                           [(left-up) (set! drawing #f) 
-                          (trace-line change-tile origin-pt (evt-clamp canvas mouse-event)) (send canvas draw)]
+                            (trace-line set-and-accumulate origin-pt (evt-clamp canvas mouse-event)) 
+                            (add-action-to-history (action 'line tiles))
+                            (set! tiles null)
+                            (send canvas draw)]
                           [else 
                           (when drawing
                             (trace-line select-tile origin-pt 
