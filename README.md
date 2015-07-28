@@ -19,6 +19,8 @@ Ascii-painter requires jpverkamp's ascii-canvas library.
 
 The camera is controlled with the arrow keys. The default map is 70x30. To change the dimensions, click File->New Map.
 
+To undo, press ctrl-z
+
 Features
 --------
 * Brushes (Paintbrush, single painter, line brush)
@@ -26,6 +28,7 @@ Features
 * Full color support
 * All glyphs in code-page 437 supported
 * Saving and loading of maps
+* Undo
 
 Upcoming Features
 -----------------
