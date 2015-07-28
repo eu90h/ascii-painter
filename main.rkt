@@ -386,9 +386,6 @@
   (send brush-hpanel set-alignment 'center 'center)
   
   (send cur-brush set-tile cur-tile)
-  
-  (send canvas set-scales (/ (send canvas get-width) canvas-width) (/ (send canvas get-height) canvas-height))
-  (send canvas draw)
 
   (send symbol-canvas min-width 256)
   (send symbol-canvas min-height 256)
@@ -396,7 +393,8 @@
   (send symbol-canvas draw)
 
   (send frame show #t)
+
   (send canvas set-scales (/ (send canvas get-width) canvas-width) (/ (send canvas get-height) canvas-height))
-  (send canvas set-scales (/ (send canvas get-width) canvas-width) (/ (send canvas get-height) canvas-height)))
+  (send canvas draw))
 
 (initialize)
