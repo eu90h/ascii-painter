@@ -8,9 +8,14 @@
 (define single-brush% (class* object% (brush-interface)
 	(init-field canvas scene)
 
-	(field (tile empty-tile))
+  (field [history null])
+	(field [tile empty-tile])
 
 	(super-new)
+
+  (define/public (set-history h) (set! history h))
+
+  (define/public (get-history) (let ([h history]) (begin (set! history null) h)))
 
 	(define/public (get-name) "Single")
 
@@ -23,11 +28,13 @@
 	(define/public (get-selected-points) null)
 
 	(define (change-tile x y) 
-    (let ([p (send canvas clamp x y)]) (set-and-add-to-history scene (pt-x p) (pt-y p) tile))
+    (let ([p (send canvas clamp x y)]) 
+      (set! history (set-and-add-to-history history scene (pt-x p) (pt-y p) tile)))
     (send canvas draw))
 
   (define (remove-tile x y) 
-    (let ([p (send canvas clamp x y)]) (set-and-add-to-history scene (pt-x p) (pt-y p) empty-tile))
+    (let ([p (send canvas clamp x y)]) 
+      (set! history (set-and-add-to-history history scene (pt-x p) (pt-y p) empty-tile)))
     (send canvas draw))
 	
   (define/public (handle mouse-event)
@@ -39,14 +46,19 @@
 (define paint-brush% (class* object% (brush-interface)
 	(init-field canvas scene)
 
-	(field (tile empty-tile))
-  (field (drawing? #f))
-  (field (removing #f))
+  (field [history null])
+	(field [tile empty-tile])
+  (field [drawing #f])
+  (field [removing #f])
 
   (super-new)
 
+  (define/public (set-history h) (set! history h))
+
+  (define/public (get-history) (let ([h history]) (begin (set! history null) h)))
+
   (define/public (get-name) "Paint")
-   
+
   (define/public (set-scene c) (set! scene c))
    
   (define/public (set-tile t) (set! tile t))
@@ -54,36 +66,42 @@
   (define/public (set-canvas c) (set! canvas c))
    
   (define (remove-tile x y) 
-    (let ([p (send canvas clamp x y)]) (set-and-add-to-history scene (pt-x p) (pt-y p) empty-tile)))
+    (let ([p (send canvas clamp x y)])
+      (set! history (set-and-add-to-history history scene (pt-x p) (pt-y p) empty-tile))))
    
   (define (change-tile x y)
-      (let ([p (send canvas clamp x y)]) (set-and-add-to-history scene (pt-x p) (pt-y p) tile)))
+    (let ([p (send canvas clamp x y)])
+      (set! history (set-and-add-to-history history scene (pt-x p) (pt-y p) tile))))
 
   (define true? (compose not false?))
 
   (define/public (handle mouse-event)
-    (when (true? drawing?) (change-tile (send mouse-event get-x) (send mouse-event get-y))
+    (when (true? drawing) (change-tile (send mouse-event get-x) (send mouse-event get-y))
       (send canvas draw))
-    (when (true? removing)  (remove-tile (send mouse-event get-x) (send mouse-event get-y))
+    (when (true? removing) (remove-tile (send mouse-event get-x) (send mouse-event get-y))
       (send canvas draw))
 
     (case (send mouse-event get-event-type)
-      [(left-down) (set! drawing? #t) (set! removing #f)]
-      [(left-up) (set! drawing? #f) (send canvas draw)]
-      [(right-down) (set! drawing? #f) (set! removing #t)]
+      [(left-down) (set! drawing #t) (set! removing #f)]
+      [(left-up) (set! drawing #f) (send canvas draw)]
+      [(right-down) (set! drawing #f) (set! removing #t)]
       [(right-up) (set! removing #f) (send canvas draw)]))))
 
 (define line-brush% (class* object% (brush-interface)
   (init-field canvas scene)
 
-  (field (tile empty-tile))
-
+  (field [tile empty-tile])
+  (field [history null])
   (field (selected-points null))
   (field [drawing #f])
-  (field (origin-pt (pt 0 0)))
+  (field [origin-pt (pt 0 0)])
   (field [tiles null])
 
   (super-new)
+
+  (define/public (set-history h) (set! history h))
+
+  (define/public (get-history) (let ([h history]) (begin (set! history null) h)))
 
   (define/public (get-name) "Line")
 
@@ -110,7 +128,7 @@
       [(left-down) (set! drawing #t) (set! origin-pt (evt-clamp canvas mouse-event))]
       [(left-up) (set! drawing #f) 
         (trace-line set-and-accumulate origin-pt (evt-clamp canvas mouse-event)) 
-        (add-action-to-history (action 'line tiles))
+        (set! history (history-add-action history (action 'line tiles)))
         (set! tiles null)
         (send canvas draw)]
       [else 

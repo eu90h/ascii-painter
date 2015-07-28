@@ -6,7 +6,6 @@
 
 (struct action (type change-data))
 
-
 (define HISTORY-MAX 2000) ; max number of items in history
 (define HISTORY-DROP 500) ; how many actions to remove from the history after going over HISTORY-MAX
 
