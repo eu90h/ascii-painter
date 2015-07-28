@@ -337,7 +337,8 @@
   (let* ([t (list-ref tiles (get-tile-index tiles (send tile-choices get-string-selection)))]
     [remove? (eq? 'yes 
       (message-box "Remove Tile" (string-append "Are you sure you want to remove " (tile-descr t)) frame '(yes-no)))])
-    (when remove? (send tile-choices delete (send tile-choices get-selection))
+    (when (and remove? (not (eq? "empty" (tile-descr t))))
+      (send tile-choices delete (send tile-choices get-selection))
       (set! tiles (filter (lambda (v) (not (eq? (tile-descr v) (tile-descr t)))) tiles))))
   (void)))
 
