@@ -1,7 +1,7 @@
 #lang racket
 (provide paint-brush% single-brush% line-brush%)
 
-(require "scene.rkt" "util.rkt" "point.rkt")
+(require "scene.rkt" "util.rkt" "point.rkt" "history.rkt")
 
 (define single-brush% (class object%
 	(init-field canvas scene)
@@ -21,14 +21,15 @@
 	(define/public (get-selected-points) null)
 
 	(define (change-tile x y) 
-          (let ([p (send canvas clamp x y)]) (send scene set (pt-x p) (pt-y p) tile))
-          (send canvas draw))
+    (let ([p (send canvas clamp x y)]) (set-and-add-to-history scene (pt-x p) (pt-y p) tile));(send scene set (pt-x p) (pt-y p) tile))
+    (send canvas draw))
 
-                        (define (remove-tile x y) 
-       (let ([p (send canvas clamp x y)]) (send scene set (pt-x p) (pt-y p) empty-tile))
-      (send canvas draw))
-	(define/public (handle mouse-event)
-          (when (eq? 'right-up (send mouse-event get-event-type))
+  (define (remove-tile x y) 
+    (let ([p (send canvas clamp x y)]) (set-and-add-to-history scene (pt-x p) (pt-y p) empty-tile));(send scene set (pt-x p) (pt-y p) empty-tile))
+    (send canvas draw))
+	
+  (define/public (handle mouse-event)
+    (when (eq? 'right-up (send mouse-event get-event-type))
 			(remove-tile (send mouse-event get-x) (send mouse-event get-y)))
 		(when (eq? 'left-up (send mouse-event get-event-type))
 			(change-tile (send mouse-event get-x) (send mouse-event get-y))))))
@@ -53,10 +54,10 @@
                        (define/public (get-selected-tiles) null)
                        
                        (define (remove-tile x y) 
-                         (let ([p (send canvas clamp x y)]) (send scene set (pt-x p) (pt-y p) empty-tile)))
+                         (let ([p (send canvas clamp x y)]) (set-and-add-to-history scene (pt-x p) (pt-y p) empty-tile)));(send scene set (pt-x p) (pt-y p) empty-tile)))
                        
                        (define (change-tile x y)
-                         (let ([p (send canvas clamp x y)]) (send scene set (pt-x p) (pt-y p) tile)))
+                         (let ([p (send canvas clamp x y)]) (set-and-add-to-history scene (pt-x p) (pt-y p) tile)));(send scene set (pt-x p) (pt-y p) tile)))
                        
                        (define true? (compose not false?))
                        (define/public (handle mouse-event)
@@ -92,7 +93,7 @@
                       
                       (define/public (get-selected-points) selected-points)
                       
-                      (define (change-tile x y) (send scene set x y tile))
+                      (define (change-tile x y) (set-and-add-to-history scene x y tile));(send scene set x y tile))
                       
                       (define (pt-change-tile p) (send scene set (pt-x p) (pt-y p) tile) (send canvas draw))
                       

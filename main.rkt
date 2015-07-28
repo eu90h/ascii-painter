@@ -1,6 +1,6 @@
 #lang racket/gui
 
-(require racket/serialize ascii-canvas file/gzip file/gunzip "scene.rkt" "symbol.rkt" "brush.rkt" "point.rkt" "util.rkt" "generator.rkt")
+(require racket/serialize ascii-canvas file/gzip file/gunzip "scene.rkt" "symbol.rkt" "brush.rkt" "point.rkt" "util.rkt" "generator.rkt" "history.rkt")
 
 (define camera-pos (pt 0 0))
 
@@ -121,10 +121,15 @@
                       (define (safe-add p)
                         (if (valid-camera-pos? (pt-add camera-pos p)) (pt-add camera-pos p) camera-pos))
 
+                      (field [holding-control #f])
+
                       (define/override (on-char key-event)
                         (case (send key-event get-key-code)
+                          [(menu release) (void)]
+                          [(control) (set! holding-control (not holding-control))]
                           [(escape) (if (eq? 'yes (message-box "Exit" "Are you sure you want to exit?" frame '(yes-no))) (exit) (void))]
-                          [(release menu) (void)]
+                       ;   [(release) (when holding-control (set! holding-control #f))]
+                          [(#\z) (when holding-control (undo-last-action scene) (send this draw))]
                           [(up #\w) (set! camera-pos (safe-add  (pt 0 -1))) (send this draw)]
                           [(left #\a) (set! camera-pos (safe-add  (pt -1 0))) (send this draw)]
                           [(down #\s) (set! camera-pos (safe-add  (pt 0 1))) (send this draw)]
