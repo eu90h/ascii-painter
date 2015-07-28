@@ -62,7 +62,7 @@
   (define/public (get-data) data)
   (define/public (set-data d) (begin (set! data d) this))
 
-   (define (too-small? x y) (or (< x 0) (< y 0)))
+  (define (too-small? x y) (or (< x 0) (< y 0)))
   (define (too-big? x y) (or (>= x width) (>= y height)))
 
   (define/public (get x y) (if (or (too-big? x y) (too-small? x y))

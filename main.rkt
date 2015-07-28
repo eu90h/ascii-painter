@@ -19,13 +19,14 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define canvas-width 70)
+(define canvas-width 60)
 (define canvas-height 30)
 
 (define scene (new scene% [width canvas-width] [height canvas-height] [tile empty-tile]))
 
-(define (scene-draw canvas scene) (for* ([xi (in-range canvas-width)] [yi (in-range canvas-height)])
-                                    (send canvas draw-tile (send scene get (+ (pt-x camera-pos) xi) (+ (pt-y camera-pos) yi))  xi  yi)))
+(define (scene-draw canvas scene) 
+  (for* ([xi (in-range canvas-width)] [yi (in-range canvas-height)])
+    (send canvas draw-tile (send scene get (+ (pt-x camera-pos) xi) (+ (pt-y camera-pos) yi))  xi  yi)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -40,28 +41,28 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (new-callback menu evt) 
-  (define dialog (new dialog% [label "New Scene"]))
-  (define hpanel (new horizontal-panel% [parent dialog]))
-  (define width-field (new text-field% [label "Width"] [parent hpanel]))
-  (define height-field (new text-field% [label "Height"] [parent hpanel]))
-  (define tile-choices (new choice% [label "Tiles"] [parent hpanel] [choices (map tile-descr tiles)]))
-  (define choice->tile ((curry list-ref) tiles))
-  (define (make-new-scene btn evt)
-    (send dialog show #f)
-    (let ([w (string->number (send width-field get-value))] 
-          [h (string->number (send height-field get-value))]
-          [t (choice->tile (send tile-choices get-selection))])
-      (change-scene (new scene% [width w] [height h] [tile t])))
-    (send tile-choices set-selection 0)
-    (change-tile tile-choices evt)
-    (set! creator-next-num (send tile-choices get-number))
-    (generate-id))
+;(define (new-callback menu evt) 
+  ;(define dialog (new dialog% [label "New Scene"]))
+ ; (define hpanel (new horizontal-panel% [parent dialog]))
+ ; (define width-field (new text-field% [label "Width"] [parent hpanel]))
+ ; (define height-field (new text-field% [label "Height"] [parent hpanel]))
+ ; (define tile-choices (new choice% [label "Tiles"] [parent hpanel] [choices (map tile-descr tiles)]))
+ ; (define choice->tile ((curry list-ref) tiles))
+ ; (define (make-new-scene btn evt)
+   ; (send dialog show #f)
+    ;(let ([w (string->number (send width-field get-value))] 
+     ;     [h (string->number (send height-field get-value))]
+     ;     [t (choice->tile (send tile-choices get-selection))])
+   ;;   (change-scene (new scene% [width w] [height h] [tile t])))
+  ;  (send tile-choices set-selection 0)
+  ;  (change-tile tile-choices evt)
+  ;  (set! creator-next-num (send tile-choices get-number))
+  ;  (generate-id))
 
-  (define ok-btn (new button% [label "OK"] [parent hpanel] [callback make-new-scene]))
-  (send dialog show #t))
+;  (define ok-btn (new button% [label "OK"] [parent hpanel] [callback make-new-scene]))
+ ; (send dialog show #t))
 
-(define new-menu (new menu-item% (label "New") (parent file-menu) (callback new-callback)))
+;(define new-menu (new menu-item% (label "New") (parent file-menu) (callback new-callback)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -86,23 +87,71 @@
   (let* ([loaded-tiles (remove-duplicates (flatten (map vector->list (vector->list (send scene get-data))))
                                           (lambda (t1 t2) (eq? (tile-descr t1) (tile-descr t2))))] 
     [reordered-tiles (append (list (first loaded-tiles)) (reverse (rest loaded-tiles)))])
-    (set! tiles reordered-tiles)
-    (send tile-choices clear)
+    (set! tiles reordered-tiles)))
+   ; (send tile-choices clear)
    
-    (for ([i (in-range (length reordered-tiles))])
-      (send tile-choices append (tile-descr (list-ref reordered-tiles i)))))
+    ;(for ([i (in-range (length reordered-tiles))])
+     ; (send tile-choices append (tile-descr (list-ref reordered-tiles i)))))
 
-  (send tile-choices set-selection 0)
-  (change-tile tile-choices evt)
-  (set! creator-next-num (send tile-choices get-number))
-  (generate-id))
+  ;(send tile-choices set-selection 0)
+  ;(change-tile tile-choices evt)
+  ;(set! creator-next-num (send tile-choices get-number))
+ ; (generate-id))
 
 (define load-menu (new menu-item% (label "Load") (parent file-menu) (callback load-callback)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define canvas-panel (new horizontal-panel% [parent frame]))
+
+(define symbol-canvas (new (class ascii-canvas%
+  (super-new [parent canvas-panel] [width-in-characters 16] [height-in-characters 16])
+  (field [x-scale (/ (send this get-width) 16)] [y-scale (/ (send this get-height) 16)])
+
+  (field [width 16] [height 16]
+    [data (for/vector ([x width]) 
+            (for/vector ([y height]) 
+              (tile (integer->symbol (modulo (+ (* 16 y) x) 255)) 
+                    (make-object color% 255 255 255 1.0) 
+                    (make-object color% 0 0 0 1.0)
+                    (list-ref cp437-strings (modulo (+ (* 16 y) x) 255)))))])
+
+  (define/public (set-scales x y) (set! x-scale x) (set! y-scale y))
+
+  (define/public (clamp mx my)
+    (pt (round (/ mx x-scale))
+        (round (/ my y-scale))))
+
+  (define/override (on-event mouse-event)
+    (when (eq? 'left-up (send mouse-event get-event-type))
+    (let* ([p (send this clamp (send mouse-event get-x) (send mouse-event get-y))])
+      (displayln p)
+      (displayln (string-append "clicked on " (tile-descr (symbol-table-lookup (pt-x p) (pt-y p)))))
+      (set-cur-tile (symbol-table-lookup (pt-x p) (pt-y p))))))
+
+  (define/public (draw) 
+    (draw-symbol-table) 
+    (send frame refresh))
+
+  (define (good-xy? x y) 
+    (and (>= x 0) (>= y 0) (< x width) (< y height)))
+
+  (define/public (symbol-table-lookup x y) 
+    (if (good-xy? x y) 
+      (vector-ref (vector-ref data x) y) 
+      (vector-ref (vector-ref data 0) 0)))
+
+  (define/public (draw-tile tile x y)
+    (send this write (tile-symbol tile) x y (tile-fg tile) (tile-bg tile)))
+
+  (define (draw-symbol-table)
+    (display (length cp437-strings))
+    (for* ([x (in-range width)] [y (in-range height)])
+      (draw-tile (symbol-table-lookup x y) x y))))))
+
+
 
 (define canvas (new (class ascii-canvas%
-                      (super-new [parent frame] [width-in-characters canvas-width] [height-in-characters canvas-height])
+                      (super-new [parent canvas-panel] [width-in-characters canvas-width] [height-in-characters canvas-height])
                       
                       (field [x-scale (/ (send this get-width) canvas-width)])
                       (field [y-scale (/ (send this get-height) canvas-height)])
@@ -123,8 +172,6 @@
                       (define (safe-add p)
                         (if (valid-camera-pos? (pt-add camera-pos p)) (pt-add camera-pos p) camera-pos))
 
-;                      (field [holding-control #f])
-
                       (define/override (on-char key-event)
                         (case (send key-event get-key-code)
                           [(menu release) (void)]
@@ -144,8 +191,8 @@
 
                             (let ([q (pt-sub p camera-pos)]) 
                               (draw-tile (if (eq? cur-brush selection-brush) selection-tile cur-tile) (pt-x q) (pt-y q))
-                              (send frame refresh)
-                              (when (eq? cur-brush selection-brush) (update-info-panel q)))
+                              (send frame refresh))
+                           ;  (when (eq? cur-brush selection-brush) (update-info-panel q)))
 
                             (set! last-mouse-pt (pt-sub p camera-pos))))
                         (unless (eq? cur-brush selection-brush) 
@@ -211,41 +258,41 @@
 (define tool-pane (new pane%
 	[parent frame]))
 
-(define (update-info-panel mouse-click-coords)
-  (let ([t (send scene get (pt-x mouse-click-coords) (pt-y mouse-click-coords))])
-    (when (tile? t)
-      (send tile-choices set-selection (modulo (send tile-choices find-string (tile-descr t)) (send tile-choices get-number)))
-      (change-tile tile-choices null))))
+;(define (update-info-panel mouse-click-coords)
+  ;(let ([t (send scene get (pt-x mouse-click-coords) (pt-y mouse-click-coords))])
+    ;(when (tile? t)
+     ; (send tile-choices set-selection (modulo (send tile-choices find-string (tile-descr t)) (send tile-choices get-number)))
+      ;(change-tile tile-choices null))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define tile-panel (new horizontal-panel% [parent tool-pane]))
 
-(define (change-tile choice evt)
-  (set-cur-tile (list-ref tiles (send choice get-selection)))
-  (send symbol-field set-selection (symbol->integer (tile-symbol cur-tile)))
-  (send descr-field set-value (tile-descr cur-tile))
-  (send tile-fg-canvas refresh-now)
-  (send tile-bg-canvas refresh-now))
+;(define (change-tile choice evt)
+;  (set-cur-tile (list-ref tiles (send choice get-selection)))
+ ; (send symbol-field set-selection (symbol->integer (tile-symbol cur-tile)))
+ ; (send descr-field set-value (tile-descr cur-tile))
+ ; (send tile-fg-canvas refresh-now)
+ ; (send tile-bg-canvas refresh-now))
 
-(define tile-choices (new choice% [label "Tiles"] [parent tile-panel] [choices (map tile-descr tiles)] [callback change-tile]))
+;(define tile-choices (new choice% [label "Tiles"] [parent tile-panel] [choices (map tile-descr tiles)] [callback change-tile]))
 
-(define (update-tile! obj evt)
-  (let*-values ([(l r) (split-at tiles (send tile-choices get-selection))]
-                [(t) (tile (integer->char (send symbol-field get-selection))
-                           (tile-fg (first r)) (tile-bg (first r))
-                           (send descr-field get-value))]
-                [(new-tiles) (append l (cons t (rest r)))])
-    (set! tiles new-tiles)
-    (define selection (send tile-choices get-selection))
-    (send tile-choices clear)
-    (for ([i (in-range (length tiles))])
-      (send tile-choices append (tile-descr (list-ref tiles i))))
-    (send tile-choices set-selection selection)
-    (send cur-brush set-tile t)
-    (send tile-fg-canvas refresh-now)
-    (send tile-bg-canvas refresh-now)))
-
+;(define (update-tile! obj evt)
+;  (let*-values ([(l r) (split-at tiles (send tile-choices get-selection))]
+    ;            [(t) (tile (integer->char (send symbol-field get-selection))
+;                           (tile-fg (first r)) (tile-bg (first r))
+ ;                          (send descr-field get-value))]
+ ;               [(new-tiles) (append l (cons t (rest r)))])
+ ;   (set! tiles new-tiles)
+ ;;   (define selection (send tile-choices get-selection))
+  ;;  (send tile-choices clear)
+ ;   (for ([i (in-range (length tiles))])
+  ;    (send tile-choices append (tile-descr (list-ref tiles i))))
+  ;  (send tile-choices set-selection selection)
+  ;  (send cur-brush set-tile t)
+  ;  (send tile-fg-canvas refresh-now)
+   ; (send tile-bg-canvas refresh-now)))
+(define (update-tile! obj evt) (void))
 (define vpanel (new vertical-panel% [parent tile-panel]))
 (define symbol-field (new choice% [label "Symbol"] [choices cp437-strings] [parent vpanel] [callback update-tile!]))
 (define descr-field (new text-field% [label "Description"] [parent vpanel] [callback update-tile!]))
@@ -267,7 +314,7 @@
     (safe-get-color-from-user! "Foreground" frame (tile-fg cur-tile))
     (tile-bg cur-tile)
     (tile-descr cur-tile)))
-  (send creator-fg-canvas redraw))
+  (send tile-fg-canvas redraw))
 
 
 (define bg-color-panel (new vertical-panel% [parent tile-panel]))
@@ -287,7 +334,7 @@
     (tile-fg cur-tile)
     (safe-get-color-from-user! "Background" frame (tile-bg cur-tile))
     (tile-descr cur-tile)))
-  (send creator-bg-canvas redraw))
+  (send tile-bg-canvas redraw))
   
 (define change-fg-btn (new button% [parent fg-color-panel] [label "Change Foreground"] 
   [callback change-fg-btn-callback]))
@@ -295,102 +342,102 @@
 (define change-bg-btn (new button% [parent bg-color-panel] [label "Change Background"] 
   [callback change-bg-btn-callback]))
 
-(define (delete-tile-btn-callback btn evt)
-  (let ([item-to-remove (send tile-choices get-string (send tile-choices get-selection))])
-    (set! tiles (filter (lambda (t) (not (eq? (tile-descr t) item-to-remove))) tiles)))
-  (send tile-choices delete (send tile-choices get-selection))
-  (set-cur-tile (list-ref tiles (send tile-choices get-selection)))
-  (send symbol-field set-selection (symbol->integer (tile-symbol cur-tile)))
-  (send descr-field set-value (tile-descr cur-tile))
-  (set! creator-next-num (if (>= creator-next-num 2) (- creator-next-num 2) 1))
-  (generate-id))
+;(define (delete-tile-btn-callback btn evt)
+ ; (let ([item-to-remove (send tile-choices get-string (send tile-choices get-selection))])
+ ;   (set! tiles (filter (lambda (t) (not (eq? (tile-descr t) item-to-remove))) tiles)))
+ ; (send tile-choices delete (send tile-choices get-selection))
+ ; (set-cur-tile (list-ref tiles (send tile-choices get-selection)))
+ ; (send symbol-field set-selection (symbol->integer (tile-symbol cur-tile)))
+ ; (send descr-field set-value (tile-descr cur-tile))
+ ; (set! creator-next-num (if (>= creator-next-num 2) (- creator-next-num 2) 1))
+ ; (generate-id))
 
-(define delete-tile-btn (new button% [parent tile-panel] [label "Delete Tile"]
-  [callback delete-tile-btn-callback]))
+;(define delete-tile-btn (new button% [parent tile-panel] [label "Delete Tile"]
+;  [callback delete-tile-btn-callback]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define creator-next-num 1)
-(define creator-next-id "")
+;(define creator-next-num 1)
+;(define creator-next-id "")
 
-(define (generate-id)
-  (let ([id (string-append "Tile " (number->string creator-next-num))])
-    (begin (set! creator-next-num (add1 creator-next-num)) (set! creator-next-id id) id)))
+;(define (generate-id)
+;  (let ([id (string-append "Tile " (number->string creator-next-num))])
+;    (begin (set! creator-next-num (add1 creator-next-num)) (set! creator-next-id id) id)))
+;
+;(define creator-fg-color (make-object color% 100 100 100))
+;(define creator-bg-color (make-object color% 100 100 100))
 
-(define creator-fg-color (make-object color% 100 100 100))
-(define creator-bg-color (make-object color% 100 100 100))
+;(define creator-dialog (new dialog% [label "New Tile"] [parent frame]))
+;(define creator-panel (new horizontal-panel% [parent creator-dialog]))
 
-(define creator-dialog (new dialog% [label "New Tile"] [parent frame]))
-(define creator-panel (new horizontal-panel% [parent creator-dialog]))
-
-(define creator-vpanel (new vertical-panel% [parent creator-panel]))
-(define creator-symbol-field (new choice% [label "Symbol"] [choices cp437-strings] [parent creator-vpanel] [callback update-tile!]))
-(define creator-descr-field (new text-field% [label "Description"] [parent creator-vpanel] [callback update-tile!]))
+;(define creator-vpanel (new vertical-panel% [parent creator-panel]))
+;(define creator-symbol-field (new choice% [label "Symbol"] [choices cp437-strings] [parent creator-vpanel] [callback update-tile!]))
+;(define creator-descr-field (new text-field% [label "Description"] [parent creator-vpanel] [callback update-tile!]))
 
 (define (safe-get-color-from-user! label parent default-color)
   (let ([c (get-color-from-user label parent default-color)])
     (if (is-a? c color%) c default-color)))
 
-(define creator-fg-panel (new vertical-panel% [parent creator-panel]))
+;(define creator-fg-panel (new vertical-panel% [parent creator-panel]))
 
-(define creator-fg-canvas (make-object (class canvas%
-                                         (super-new [parent creator-fg-panel])
-                                         (define/public (redraw)
-                                           (send this refresh) (send this refresh-now))
-                                         (define/override (on-paint)
-                                           (send this set-canvas-background creator-fg-color)))))
+;(define creator-fg-canvas (make-object (class canvas%
+ ;                                        (super-new [parent creator-fg-panel])
+ ;                                        (define/public (redraw)
+ ;                                          (send this refresh) (send this refresh-now))
+  ;                                       (define/override (on-paint)
+ ;                                          (send this set-canvas-background creator-fg-color)))))
 
-(define creator-fg-button (new button% [label "FG Color"] [parent creator-fg-panel] 
-                               [callback (thunk* (set! creator-fg-color
-                                                       (safe-get-color-from-user! "Foreground" frame creator-fg-color))
-                                                 (send creator-fg-canvas redraw))]))
+;(define creator-fg-button (new button% [label "FG Color"] [parent creator-fg-panel] 
+ ;                              [callback (thunk* (set! creator-fg-color
+ ;                                                      (safe-get-color-from-user! "Foreground" frame creator-fg-color))
+ ;                                                (send creator-fg-canvas redraw))]))
 
-(define creator-bg-panel (new vertical-panel% [parent creator-panel]))
+;(define creator-bg-panel (new vertical-panel% [parent creator-panel]))
 
-(define creator-bg-canvas (make-object (class canvas%
-                                         (define/public (redraw)
-                                           (send this refresh) (send this refresh-now))
-                                         (define/override (on-paint)
-                                           (send this set-canvas-background creator-bg-color))
-                                         (super-new [parent creator-bg-panel]))))
+;(define creator-bg-canvas (make-object (class canvas%
+ ;                                        (define/public (redraw)
+  ;                                         (send this refresh) (send this refresh-now))
+   ;                                      (define/override (on-paint)
+    ;                                       (send this set-canvas-background creator-bg-color))
+     ;                                    (super-new [parent creator-bg-panel]))))
+;
+;(define creator-bg-button (new button% [label "BG Color"] [parent creator-bg-panel] 
+;                               [callback (thunk* (set! creator-bg-color
+ ;                                                      (safe-get-color-from-user! "Background" frame creator-bg-color))
+  ;                                               (send creator-bg-canvas redraw))]))
 
-(define creator-bg-button (new button% [label "BG Color"] [parent creator-bg-panel] 
-                               [callback (thunk* (set! creator-bg-color
-                                                       (safe-get-color-from-user! "Background" frame creator-bg-color))
-                                                 (send creator-bg-canvas redraw))]))
+;(define (add-tile-callback btn evt)
+;  (let ([t (tile (integer->symbol (send creator-symbol-field get-selection))
+ ;                creator-fg-color
+  ;               creator-bg-color
+   ;;              (send creator-descr-field get-value))])
+   ; (set! tiles (remove-duplicates (append tiles (list t))))
+   ; (send tile-choices append (tile-descr t))
+ ;   (send tile-choices set-selection (sub1 (length tiles)))
+ ;   (set-cur-tile t)
+ ;   (send symbol-field set-selection (symbol->integer (tile-symbol cur-tile)))
+ ;   (send descr-field set-value (tile-descr cur-tile))
+  ;  (generate-id)
+ ;   (send creator-symbol-field set-selection 0)
+  ;  (send creator-dialog show #f)))
 
-(define (add-tile-callback btn evt)
-  (let ([t (tile (integer->symbol (send creator-symbol-field get-selection))
-                 creator-fg-color
-                 creator-bg-color
-                 (send creator-descr-field get-value))])
-    (set! tiles (remove-duplicates (append tiles (list t))))
-    (send tile-choices append (tile-descr t))
-    (send tile-choices set-selection (sub1 (length tiles)))
-    (set-cur-tile t)
-    (send symbol-field set-selection (symbol->integer (tile-symbol cur-tile)))
-    (send descr-field set-value (tile-descr cur-tile))
-    (generate-id)
-    (send creator-symbol-field set-selection 0)
-    (send creator-dialog show #f)))
+;(define creator-button-panel (new vertical-panel% [parent creator-panel]))
 
-(define creator-button-panel (new vertical-panel% [parent creator-panel]))
+;(define creator-add-btn (new button% [label "Add Tile"] [parent creator-button-panel] [callback add-tile-callback]));
 
-(define creator-add-btn (new button% [label "Add Tile"] [parent creator-button-panel] [callback add-tile-callback]))
-
-(define (randomize-tile-callback btn evt)
-  (send creator-symbol-field set-selection (symbol->integer (get-random-symbol)))
+;(define (randomize-tile-callback btn evt)
+;  (send creator-symbol-field set-selection (symbol->integer (get-random-symbol)))
   
-  (set! creator-bg-color (get-random-color)) 
-  (set! creator-fg-color (get-random-color))
+;  (set! creator-bg-color (get-random-color)) 
+;  (set! creator-fg-color (get-random-color))
   
-  (send creator-fg-canvas redraw)
-  (send creator-bg-canvas redraw)
+ ; (send creator-fg-canvas redraw)
+ ; (send creator-bg-canvas redraw)
   
-  (send creator-dialog show #f)
-  (send creator-dialog show #t))
+ ; (send creator-dialog show #f)
+ ; (send creator-dialog show #t))
 
-(define creator-random-btn (new button% [label "Randomize Properties"] [parent creator-button-panel] [callback randomize-tile-callback]))
+;(define creator-random-btn (new button% [label "Randomize Properties"] [parent creator-button-panel] [callback randomize-tile-callback]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -401,12 +448,12 @@
 (define brushes (list paint-brush single-brush line-brush))
 (define cur-brush paint-brush)
 
-(define create-tile-btn (new button% [label "Create Tile"] [parent brush-hpanel] 
-                             [callback (thunk* 
-                                        (send creator-fg-canvas refresh-now)
-                                        (send creator-bg-canvas refresh-now)
-                                        (send creator-descr-field set-value creator-next-id)
-                                        (send creator-dialog show #t))]))
+;(define create-tile-btn (new button% [label "Create Tile"] [parent brush-hpanel] 
+;                             [callback (thunk* 
+ ;                                       (send creator-fg-canvas refresh-now)
+  ;                                      (send creator-bg-canvas refresh-now)
+   ;                                     (send creator-descr-field set-value creator-next-id)
+    ;                                    (send creator-dialog show #t))]))
 
 (define (switch-brush b)
   (set! cur-brush b)
@@ -427,10 +474,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (initialize)
-  (generate-id)
+  ;(generate-id)
 
-  (send creator-fg-canvas redraw)
-  (send creator-bg-canvas redraw)
+ ; (send creator-fg-canvas redraw)
+ ; (send creator-bg-canvas redraw)
 
   (send tile-fg-canvas min-height 50)
   (send tile-bg-canvas min-height 50)
@@ -446,6 +493,9 @@
   
   (send canvas set-scales (/ (send canvas get-width) canvas-width) (/ (send canvas get-height) canvas-height))
   (send canvas draw)
+
+  (send symbol-canvas set-scales (/ (send symbol-canvas get-width) 16) (/ (send symbol-canvas get-width) 16))
+  (send symbol-canvas draw)
   
   (send frame show #t))
 
