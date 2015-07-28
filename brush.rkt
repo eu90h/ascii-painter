@@ -77,9 +77,6 @@
 
   (define/public (handle mouse-event)
     (when (true? drawing) (change-tile (send mouse-event get-x) (send mouse-event get-y))
-      (displayln 
-        (string-append 
-          (number->string (send mouse-event get-x)) ", " (number->string (send mouse-event get-y))))
       (send canvas draw))
     (when (true? removing) (remove-tile (send mouse-event get-x) (send mouse-event get-y))
       (send canvas draw))

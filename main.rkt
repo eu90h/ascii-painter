@@ -6,11 +6,16 @@
 
 (define camera-pos (pt 0 0))
 
+(define fg-color (make-object color% 255 255 255 1.0))
+(define bg-color (make-object color% 0 0 0 1.0))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define tiles (list empty-tile))
 (define selection-tile (tile #\X (make-object color% 255 255 0 1.0) (make-object color% 0 0 0 1.0) "Crosshair"))
-(define cur-tile (first tiles))
+
+(define cur-tile empty-tile)
+(define cur-tile-table-offset '(0 0))
+
 (define (set-cur-tile t)
   (set! cur-tile t)
   (unless (eq? cur-brush selection-brush) (send cur-brush set-tile t))
@@ -58,11 +63,7 @@
   (gunzip-through-ports in out)
   (close-input-port in)
   (change-scene (deserialize-scene (read (open-input-string (get-output-string out)))))
-  (close-output-port out)
-  (let* ([loaded-tiles (remove-duplicates (flatten (map vector->list (vector->list (send scene get-data))))
-                                          (lambda (t1 t2) (eq? (tile-descr t1) (tile-descr t2))))] 
-    [reordered-tiles (append (list (first loaded-tiles)) (reverse (rest loaded-tiles)))])
-    (set! tiles reordered-tiles)))
+  (close-output-port out))
 
 (define load-menu (new menu-item% (label "Load") (parent file-menu) (callback load-callback)))
 
@@ -88,13 +89,20 @@
     (pt (round (/ mx x-scale))
         (round (/ my y-scale))))
 
+  (define (process-tiles fn) (for* ([x (in-range 16)] [y (in-range 16)])
+    (set x y (fn (send this symbol-table-lookup x y)))))
+
+  (define (set x y tile) (when (good-xy? x y) (vector-set! (vector-ref data x) y tile)))
+
+  (define/public (dye-tiles fg bg)
+    (process-tiles (lambda (t) (tile (tile-symbol t) fg bg (tile-descr t))))
+    (draw-symbol-table)
+    (send frame refresh))
+
   (define/override (on-event mouse-event)
-    ;(send canvas set-scales (/ (send canvas get-width) canvas-width) (/ (send canvas get-height) canvas-height))
-   ; (displayln (send canvas get-width)) (displayln (send canvas get-height))
     (when (eq? 'left-up (send mouse-event get-event-type))
     (let* ([p (send this clamp (send mouse-event get-x) (send mouse-event get-y))])
-      (displayln p)
-      (displayln (string-append "clicked on " (tile-descr (symbol-table-lookup (pt-x p) (pt-y p)))))
+      (set! cur-tile-table-offset (list (pt-x p) (pt-y p)))
       (set-cur-tile (symbol-table-lookup (pt-x p) (pt-y p))))))
 
   (define/public (draw) 
@@ -107,13 +115,12 @@
   (define/public (symbol-table-lookup x y) 
     (if (good-xy? x y) 
       (vector-ref (vector-ref data x) y) 
-      (vector-ref (vector-ref data 0) 0)))
+      (begin (displayln "bad ref") (vector-ref (vector-ref data 0) 0))))
 
   (define/public (draw-tile tile x y)
     (send this write (tile-symbol tile) x y (tile-fg tile) (tile-bg tile)))
 
   (define (draw-symbol-table)
-    (display (length cp437-strings))
     (for* ([x (in-range width)] [y (in-range height)])
       (draw-tile (symbol-table-lookup x y) x y))))))
 
@@ -196,34 +203,34 @@
   (map (lambda (b) (send b set-scene s)) brushes)
   (send canvas draw))
 
-(define (fill-generator-callback menu evt)
-  (let ([fill-generator (make-object fill-generator% scene canvas tiles)])
-    (send fill-generator process)
-    (change-scene (send fill-generator get-scene))))
+;(define (fill-generator-callback menu evt)
+;  (let ([fill-generator (make-object fill-generator% scene canvas tiles)])
+;    (send fill-generator process)
+;    (change-scene (send fill-generator get-scene))))
 
-(define fill-generator-menu (new menu-item% (label "Fill") (parent generator-menu) (callback fill-generator-callback)))
+;(define fill-generator-menu (new menu-item% (label "Fill") (parent generator-menu) (callback fill-generator-callback)))
 
-(define (uniform-random-fill-generator-callback menu evt)
-  (let ([gen (make-object uniform-random-fill-generator% scene canvas tiles 10)])
-    (send gen process)
-    (send canvas draw)))
+;(define (uniform-random-fill-generator-callback menu evt)
+;  (let ([gen (make-object uniform-random-fill-generator% scene canvas tiles 10)])
+;    (send gen process)
+;    (send canvas draw)))
 
-(define uniform-random-fill-generator-menu (new menu-item% (label "Randomly Place") (parent generator-menu) (callback uniform-random-fill-generator-callback)))
-(define rooms null)
-(define (rectangle-generator-callback menu evt)
-  (let ([gen (make-object rectangle-generator% scene canvas tiles rooms)])
-    (send gen process)
-    (set! rooms (append rooms (list (send gen get-room))))
-    (send canvas draw)))
+;(define uniform-random-fill-generator-menu (new menu-item% (label "Randomly Place") (parent generator-menu) (callback uniform-random-fill-generator-callback)))
+;(define rooms null)
+;(define (rectangle-generator-callback menu evt)
+;  (let ([gen (make-object rectangle-generator% scene canvas tiles rooms)])
+ ;   (send gen process)
+ ;   (set! rooms (append rooms (list (send gen get-room))))
+ ;   (send canvas draw)))
 
-(define rectangle-generator-menu (new menu-item% (label "Rectangle") (parent generator-menu) (callback rectangle-generator-callback)))
+;(define rectangle-generator-menu (new menu-item% (label "Rectangle") (parent generator-menu) (callback rectangle-generator-callback)))
 
-(define (room-connector-generator-callback menu evt)
-  (let ([gen (make-object room-connector-generator% scene canvas tiles rooms (length rooms))])
-    (send gen process)
-    (send canvas draw)))
+;(define (room-connector-generator-callback menu evt)
+ ; (let ([gen (make-object room-connector-generator% scene canvas tiles rooms (length rooms))])
+  ;  (send gen process)
+   ; (send canvas draw)))
 
-(define room-connector-generator-menu (new menu-item% (label "Room Connector") (parent generator-menu) (callback room-connector-generator-callback)))
+; (define room-connector-generator-menu (new menu-item% (label "Room Connector") (parent generator-menu) (callback room-connector-generator-callback)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -233,17 +240,16 @@
 
 (define tile-fg-canvas (make-object (class canvas%
   (define/override (on-paint)
-    (send this set-canvas-background (tile-fg cur-tile)))
+    (send this set-canvas-background fg-color))
   (define/public (redraw)
     (send this refresh) (send this refresh-now))
   (super-new [parent fg-color-panel]))))
 
 (define (change-fg-btn-callback btn evt)
-  (set-cur-tile
-  (tile (tile-symbol cur-tile)
-    (safe-get-color-from-user! "Foreground" frame (tile-fg cur-tile))
-    (tile-bg cur-tile)
-    (tile-descr cur-tile)))
+  (set! fg-color (safe-get-color-from-user! "Foreground" frame fg-color))
+  (send symbol-canvas dye-tiles fg-color bg-color)
+  (set-cur-tile 
+    (send symbol-canvas symbol-table-lookup (first cur-tile-table-offset) (second cur-tile-table-offset)))
   (send tile-fg-canvas redraw))
 
 
@@ -255,15 +261,14 @@
   (define/public (redraw)
     (send this refresh) (send this refresh-now))
   (define/override (on-paint)
-    (send this set-canvas-background (tile-bg cur-tile)))
+    (send this set-canvas-background bg-color))
   (super-new [parent bg-color-panel]))))
 
 (define (change-bg-btn-callback btn evt)
-  (set-cur-tile
-  (tile (tile-symbol cur-tile)
-    (tile-fg cur-tile)
-    (safe-get-color-from-user! "Background" frame (tile-bg cur-tile))
-    (tile-descr cur-tile)))
+  (set! bg-color (safe-get-color-from-user! "Background" frame bg-color))
+  (send symbol-canvas dye-tiles fg-color bg-color)
+  (set-cur-tile 
+    (send symbol-canvas symbol-table-lookup (first cur-tile-table-offset) (second cur-tile-table-offset)))
   (send tile-bg-canvas redraw))
   
 (define change-fg-btn (new button% [parent fg-color-panel] [label "Change Foreground"] 
