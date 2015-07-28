@@ -49,6 +49,27 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define (new-callback menu evt) 
+  (define dialog (new dialog% [label "New Scene"]))
+  (define hpanel (new horizontal-panel% [parent dialog]))
+  (define width-field (new text-field% [label "Width"] [parent hpanel]))
+  (define height-field (new text-field% [label "Height"] [parent hpanel]))
+  (define tile-choices (new choice% [label "Tiles"] [parent hpanel] [choices (map tile-descr tiles)]))
+  (define choice->tile ((curry list-ref) tiles))
+  (define (make-new-scene btn evt)
+    (send dialog show #f)
+    (let ([w (string->number (send width-field get-value))] 
+        [h (string->number (send height-field get-value))]
+        [t (choice->tile (send tile-choices get-selection))])
+      (change-scene (new scene% [width w] [height h] [tile t])))
+
+   (define ok-btn (new button% [label "OK"] [parent hpanel] [callback make-new-scene]))
+   (send dialog show #t))
+
+(define new-menu (new menu-item% (label "New") (parent file-menu) (callback new-callback)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define (save-callback menu evt) 
   (let ([path (put-file)] [tmp (make-temporary-file)])
     (define out (open-output-file tmp #:mode 'binary #:exists 'replace))
