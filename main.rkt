@@ -3,6 +3,7 @@
 (require racket/serialize ascii-canvas file/gzip file/gunzip "scene.rkt" "symbol.rkt" "brush.rkt" "point.rkt" "util.rkt" "generator.rkt" "history.rkt")
 
 (define history null)
+(define rooms null)
 
 (define camera-pos (pt 0 0))
 
@@ -117,7 +118,7 @@
   (define/public (symbol-table-lookup x y) 
     (if (good-xy? x y) 
       (vector-ref (vector-ref data x) y) 
-      (begin (displayln "bad ref") (vector-ref (vector-ref data 0) 0))))
+      (vector-ref (vector-ref data 0) 0)))
 
   (define/public (draw-tile tile x y)
     (send this write (tile-symbol tile) x y (tile-fg tile) (tile-bg tile)))
@@ -129,74 +130,71 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define canvas (new (class ascii-canvas%
-                      (super-new [parent canvas-panel] [width-in-characters canvas-width] [height-in-characters canvas-height])
-                      
-                      (field [x-scale (/ (send this get-width) canvas-width)])
-                      (field [y-scale (/ (send this get-height) canvas-height)])
-                      (field [last-mouse-pt (pt 0 0)])
+  (super-new [parent canvas-panel] [width-in-characters canvas-width] [height-in-characters canvas-height])
 
-                      (define/public (set-scales x y) (set! x-scale x) (set! y-scale y))
-                      (define/public (clamp mx my)
-                        (pt (+ (pt-x camera-pos) (round (/ mx x-scale)))
-                            (+ (pt-y camera-pos) (round (/ my y-scale)))))
-                 
-                      (define (within-scene-bounds? p)
-                        (let* ( [x (pt-x p)] [y (pt-y p)])
-                          (and (>= x 0) (>= y 0) (< x (sub1 (send scene get-width))) (< y  (send scene get-height)))))
+  (field [x-scale (/ (send this get-width) canvas-width)])
+  (field [y-scale (/ (send this get-height) canvas-height)])
+  (field [last-mouse-pt (pt 0 0)])
 
-                      (define (valid-camera-pos? p)
-                          (and (within-scene-bounds? p) (within-scene-bounds? (pt-add p (pt canvas-width canvas-height)))))
+  (define/public (set-scales x y) (set! x-scale x) (set! y-scale y))
+  (define/public (clamp mx my)
+    (pt (+ (pt-x camera-pos) (round (/ mx x-scale)))
+        (+ (pt-y camera-pos) (round (/ my y-scale)))))
 
-                      (define (safe-add p)
-                        (if (valid-camera-pos? (pt-add camera-pos p)) (pt-add camera-pos p) camera-pos))
+  (define (within-scene-bounds? p)
+    (let* ( [x (pt-x p)] [y (pt-y p)])
+      (and (>= x 0) (>= y 0) (< x (sub1 (send scene get-width))) (< y  (send scene get-height)))))
 
-                      (define/override (on-char key-event)
-                        (case (send key-event get-key-code)
-                          [(menu release) (void)]
-                          [(escape) (if (eq? 'yes (message-box "Exit" "Are you sure you want to exit?" frame '(yes-no))) (exit) (void))]
-                          [(#\z)  (set! history (undo-last-action history scene)) (send this draw)]
-                          [(up #\w) (set! camera-pos (safe-add  (pt 0 -1))) (send this draw)]
-                          [(left #\a) (set! camera-pos (safe-add  (pt -1 0))) (send this draw)]
-                          [(down #\s) (set! camera-pos (safe-add  (pt 0 1))) (send this draw)]
-                          [(right #\d) (set! camera-pos (safe-add  (pt 1 0))) (send this draw)])
-                        this)
-                      
-                      (define/override (on-event mouse-event)
-                        (let ([p (send this clamp (send mouse-event get-x) (send mouse-event get-y))])
-                          (when (within-scene-bounds? p)
-                            (draw-tile
-                              (send scene get (pt-x last-mouse-pt) (pt-y last-mouse-pt)) (pt-x last-mouse-pt) (pt-y last-mouse-pt))
+  (define (valid-camera-pos? p)
+      (and (within-scene-bounds? p) (within-scene-bounds? (pt-add p (pt canvas-width canvas-height)))))
 
-                            (let ([q (pt-sub p camera-pos)]) 
-                              (draw-tile (if (eq? cur-brush selection-brush) selection-tile cur-tile) (pt-x q) (pt-y q))
-                              (send frame refresh))
+  (define (safe-add p)
+    (if (valid-camera-pos? (pt-add camera-pos p)) (pt-add camera-pos p) camera-pos))
 
-                            (set! last-mouse-pt (pt-sub p camera-pos))))
-                        (unless (eq? cur-brush selection-brush) 
-                          (send cur-brush handle mouse-event) 
-                          (set! history (history-add-actions history (send cur-brush get-history)))))
-                  
-                      
-                      (define/public (get-width-in-chars) canvas-width)
+  (define/override (on-char key-event)
+    (case (send key-event get-key-code)
+      [(menu release) (void)]
+      [(escape) (if (eq? 'yes (message-box "Exit" "Are you sure you want to exit?" frame '(yes-no))) (exit) (void))]
+      [(#\z)  (set! history (undo-last-action history scene)) (send this draw)]
+      [(up #\w) (set! camera-pos (safe-add  (pt 0 -1))) (send this draw)]
+      [(left #\a) (set! camera-pos (safe-add  (pt -1 0))) (send this draw)]
+      [(down #\s) (set! camera-pos (safe-add  (pt 0 1))) (send this draw)]
+      [(right #\d) (set! camera-pos (safe-add  (pt 1 0))) (send this draw)])
+    this)
 
-                      (define (good-xy? x y) 
-                        (and (>= x 0) (>= y 0) (< x canvas-width) (< y canvas-height)))
+  (define/override (on-event mouse-event)
+    (let ([p (send this clamp (send mouse-event get-x) (send mouse-event get-y))])
+      (when (within-scene-bounds? p)
+        (draw-tile
+          (send scene get (pt-x last-mouse-pt) (pt-y last-mouse-pt)) (pt-x last-mouse-pt) (pt-y last-mouse-pt))
+        (let ([q (pt-sub p camera-pos)]) 
+          (draw-tile (if (eq? cur-brush selection-brush) selection-tile cur-tile) (pt-x q) (pt-y q))
+          (send frame refresh))
+        (set! last-mouse-pt (pt-sub p camera-pos))))
+    (unless (eq? cur-brush selection-brush) 
+      (send cur-brush handle mouse-event) 
+      (set! history (history-add-actions history (send cur-brush get-history)))))
 
-                      (define/public (draw-tile tile canvas-x canvas-y)
-                        (when (good-xy? canvas-x canvas-y)
-                          (send this write (tile-symbol tile) canvas-x canvas-y (tile-fg tile) (tile-bg tile))))
+  (define/public (get-width-in-chars) canvas-width)
 
-                      (define/public (draw-selected-tiles)
-                        (scene-draw this scene)
-                        (define selected-points (send cur-brush get-selected-points))
-                        (for ([i (in-range (length selected-points))])
-                          (define p (list-ref selected-points i))
-                          (define t (send scene get (pt-x p) (pt-y p)))
-                          (send this draw-tile (tile (tile-symbol t) (make-object color% 255 255 0 1.0) (tile-bg t) (tile-descr t))
-                            (+ (pt-x camera-pos) (pt-x p))
-                            (+ (pt-y camera-pos) (pt-y p)))))
-                   
-                      (define/public (draw) (scene-draw this scene) (send frame refresh)))))
+  (define (good-xy? x y) 
+    (and (>= x 0) (>= y 0) (< x canvas-width) (< y canvas-height)))
+
+  (define/public (draw-tile tile canvas-x canvas-y)
+    (when (good-xy? canvas-x canvas-y)
+      (send this write (tile-symbol tile) canvas-x canvas-y (tile-fg tile) (tile-bg tile))))
+
+  (define/public (draw-selected-tiles)
+    (scene-draw this scene)
+    (define selected-points (send cur-brush get-selected-points))
+    (for ([i (in-range (length selected-points))])
+      (define p (list-ref selected-points i))
+      (define t (send scene get (pt-x p) (pt-y p)))
+      (send this draw-tile (tile (tile-symbol t) (make-object color% 255 255 0 1.0) (tile-bg t) (tile-descr t))
+        (+ (pt-x camera-pos) (pt-x p))
+        (+ (pt-y camera-pos) (pt-y p)))))
+
+  (define/public (draw) (scene-draw this scene) (send frame refresh)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -218,7 +216,7 @@
     (send canvas draw)))
 
 (define uniform-random-fill-generator-menu (new menu-item% (label "Randomly Place") (parent generator-menu) (callback uniform-random-fill-generator-callback)))
-(define rooms null)
+
 (define (rectangle-generator-callback menu evt)
   (let ([gen (make-object rectangle-generator% scene canvas tiles rooms)])
     (send gen process)
