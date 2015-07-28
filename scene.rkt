@@ -2,7 +2,7 @@
 
 (provide scene% empty-tile (struct-out tile) serialize-scene deserialize-scene)
 
-(require racket/serialize)
+(require racket/serialize "interval.rkt")
 
 (serializable-struct tile (symbol fg bg descr) #:transparent) ; the atomic unit of which scenes are composed is the tile
 
@@ -56,17 +56,17 @@
   (init-field width height tile)
   
   (field (data (for/vector ([y height]) (for/vector ([x width]) tile))))
-  
+  (field [x-interval (interval 0 (sub1 width))] [y-interval (interval 0 (sub1 height))])
+
   (super-new)
   
   (define/public (get-data) data)
   (define/public (set-data d) (begin (set! data d) this))
 
-  (define (too-small? x y) (or (< x 0) (< y 0)))
-  (define (too-big? x y) (or (>= x width) (>= y height)))
+  (define (good-xy? x y) 
+    (and (number-in-interval? x x-interval) (number-in-interval? y y-interval)))
 
-  (define/public (get x y) (if (or (too-big? x y) (too-small? x y))
-                              empty-tile (vector-ref (vector-ref data y) x)))
+  (define/public (get x y) (if (good-xy? x y) (vector-ref (vector-ref data y) x) empty-tile))
   
   (define/public (get-width) width)
   (define/public (get-height) height)
@@ -76,7 +76,8 @@
                               (send s set x y (send this get x y))) s))
                          
   
-  (define/public (set x y tile) (unless (or (too-big? x y) (too-small? x y)) (vector-set! (vector-ref data y) x tile) this))
+  (define/public (set x y tile) (when (good-xy? x y) (vector-set! (vector-ref data y) x tile) this))
+
   (define/public (process-tiles fn) (for* ([x (in-range width)] [y (in-range height)])
     (send this set x y (fn (send this get x y))) this)))
 
