@@ -336,7 +336,7 @@
 (define remove-tile-btn-callback (thunk*
   (let* ([t (list-ref tiles (get-tile-index tiles (send tile-choices get-string-selection)))]
     [remove? (eq? 'yes 
-      (message-box "Exit" (string-append "Are you sure you want to remove " (tile-descr t)) frame '(yes-no)))])
+      (message-box "Remove Tile" (string-append "Are you sure you want to remove " (tile-descr t)) frame '(yes-no)))])
     (when remove? (send tile-choices delete (send tile-choices get-selection))))
   (void)))
 
