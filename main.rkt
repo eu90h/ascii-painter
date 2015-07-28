@@ -1,6 +1,6 @@
 #lang racket/gui
 
-(require racket/serialize ascii-canvas file/gzip file/gunzip "scene.rkt" "symbol.rkt" "brush.rkt" "point.rkt" "util.rkt" "generator.rkt" "history.rkt")
+(require racket/serialize ascii-canvas file/gzip file/gunzip "scene.rkt" "symbol.rkt" "brush.rkt" "point.rkt" "util.rkt" "generator.rkt" "history.rkt" "interval.rkt")
 
 (define history null)
 (define rooms null)
@@ -110,7 +110,7 @@
   (super-new [parent canvas-left-panel] [width-in-characters 16] [height-in-characters 16])
   (field [x-scale (/ (send this get-width) 16)] [y-scale (/ (send this get-height) 16)])
 
-  (field [width 16] [height 16]
+  (field [width 16] [height 16] [x-interval (interval 0 (sub1 width))] [y-interval (interval 0 (sub1 height))]
     [data (for/vector ([x width]) 
             (for/vector ([y height]) 
               (tile (integer->symbol (modulo (+ (* 16 y) x) 255)) 
@@ -145,7 +145,7 @@
     (send frame refresh))
 
   (define (good-xy? x y) 
-    (and (>= x 0) (>= y 0) (< x width) (< y height)))
+    (and (number-in-interval? x x-interval) (number-in-interval? y y-interval)))
 
   (define/public (symbol-table-lookup x y) 
     (if (good-xy? x y) 
@@ -164,6 +164,7 @@
 (define canvas (new (class ascii-canvas%
   (super-new [parent canvas-panel] [width-in-characters canvas-width] [height-in-characters canvas-height])
 
+  (field [x-interval (interval 0 (sub1 canvas-width))] [y-interval (interval 0 (sub1 canvas-height))])
   (field [x-scale (/ (send this get-width) canvas-width)])
   (field [y-scale (/ (send this get-height) canvas-height)])
   (field [last-mouse-pt (pt 0 0)])
@@ -210,7 +211,7 @@
   (define/public (get-width-in-chars) canvas-width)
 
   (define (good-xy? x y) 
-    (and (>= x 0) (>= y 0) (< x canvas-width) (< y canvas-height)))
+    (and (number-in-interval? x x-interval) (number-in-interval? y y-interval)))
 
   (define/public (draw-tile tile canvas-x canvas-y)
     (when (good-xy? canvas-x canvas-y)
