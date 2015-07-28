@@ -290,6 +290,15 @@
 (define change-bg-btn (new button% [parent bg-color-panel] [label "Change Background"] 
   [callback change-bg-btn-callback]))
 
+(define (delete-tile-btn-callback btn evt)
+  (send tile-choices delete (send tile-choices get-selection))
+  (set-cur-tile (list-ref tiles (send tile-choices get-selection)))
+  (send symbol-field set-selection (symbol->integer (tile-symbol cur-tile)))
+  (send descr-field set-value (tile-descr cur-tile)))
+
+(define delete-tile-btn (new button% [parent tile-panel] [label "Delete Tile"]
+  [callback delete-tile-btn-callback]))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define creator-next-num 1)
