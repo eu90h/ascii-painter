@@ -1,9 +1,11 @@
 #lang racket
-(provide paint-brush% single-brush% line-brush%)
+(provide paint-brush% single-brush% line-brush% brush-interface)
 
 (require "scene.rkt" "util.rkt" "point.rkt" "history.rkt")
 
-(define single-brush% (class object%
+(define brush-interface (interface () set-scene set-tile set-canvas handle)) 
+
+(define single-brush% (class* object% (brush-interface)
 	(init-field canvas scene)
 
 	(field (tile empty-tile))
@@ -34,94 +36,87 @@
 		(when (eq? 'left-up (send mouse-event get-event-type))
 			(change-tile (send mouse-event get-x) (send mouse-event get-y))))))
 
-(define paint-brush% (class object%
+(define paint-brush% (class* object% (brush-interface)
 	(init-field canvas scene)
 
 	(field (tile empty-tile))
-                       (field (drawing? #f))
-                       (field (removing #f))
-                       (super-new)
+  (field (drawing? #f))
+  (field (removing #f))
 
-                       (define/public (get-name) "Paint")
-                       
-                       (define/public (set-scene c) (set! scene c))
-                       
-                       (define/public (set-tile t) (set! tile t))
-                       
-                       (define/public (set-canvas c) (set! canvas c))
-                       
-                       (define/public (get-selected-points) null)
-                       (define/public (get-selected-tiles) null)
-                       
-                       (define (remove-tile x y) 
-                         (let ([p (send canvas clamp x y)]) (set-and-add-to-history scene (pt-x p) (pt-y p) empty-tile)))
-                       
-                       (define (change-tile x y)
-                         (let ([p (send canvas clamp x y)]) (set-and-add-to-history scene (pt-x p) (pt-y p) tile)))
-                       
-                       (define true? (compose not false?))
-                       (define/public (handle mouse-event)
-                         (when (true? drawing?) (change-tile (send mouse-event get-x) (send mouse-event get-y))
-                           (send canvas draw))
-                         (when (true? removing)  (remove-tile (send mouse-event get-x) (send mouse-event get-y))
-                           (send canvas draw))
+  (super-new)
 
-                         (case (send mouse-event get-event-type)
-                           [(left-down) (set! drawing? #t) (set! removing #f)]
-                           [(left-up) (set! drawing? #f) (send canvas draw)]
-                           [(right-down) (set! drawing? #f) (set! removing #t)]
-                           [(right-up) (set! removing #f) (send canvas draw)]))))
+  (define/public (get-name) "Paint")
+   
+  (define/public (set-scene c) (set! scene c))
+   
+  (define/public (set-tile t) (set! tile t))
+   
+  (define/public (set-canvas c) (set! canvas c))
+   
+  (define (remove-tile x y) 
+    (let ([p (send canvas clamp x y)]) (set-and-add-to-history scene (pt-x p) (pt-y p) empty-tile)))
+   
+  (define (change-tile x y)
+      (let ([p (send canvas clamp x y)]) (set-and-add-to-history scene (pt-x p) (pt-y p) tile)))
 
-(define line-brush% (class object%
-                      (init-field canvas scene)
-                      
-                      (field (tile empty-tile))
-                      
-                      (field (selected-points null))
-                      (field [drawing #f])
-                      (field (origin-pt (pt 0 0)))
-                      (field [tiles null])
+  (define true? (compose not false?))
 
-                      (super-new)
-                      
-                      (define/public (get-name) "Line")
-                      
-                      (define/public (set-scene c) (set! scene c))
-                      
-                      (define/public (set-tile t) (set! tile t))
-                      
-                      (define/public (set-canvas c) (set! canvas c))
-                      
-                      (define/public (get-selected-points) selected-points)
-                      
-                      (define (change-tile x y) (send scene set x y tile))
-                      
-                      (define (pt-change-tile p) (send scene set (pt-x p) (pt-y p) tile) (send canvas draw))
-                      
-                      (define (get-tile p) (send scene get (pt-x p) (pt-y p)))
-                      
-                      (define (change-tiles pts) (map (lambda (p) (change-tile (pt-x p) (pt-y p))) pts))
+  (define/public (handle mouse-event)
+    (when (true? drawing?) (change-tile (send mouse-event get-x) (send mouse-event get-y))
+      (send canvas draw))
+    (when (true? removing)  (remove-tile (send mouse-event get-x) (send mouse-event get-y))
+      (send canvas draw))
 
-                      (define (select-tile x y) 
-                          (set! selected-points (append selected-points (list (pt x y)))))
+    (case (send mouse-event get-event-type)
+      [(left-down) (set! drawing? #t) (set! removing #f)]
+      [(left-up) (set! drawing? #f) (send canvas draw)]
+      [(right-down) (set! drawing? #f) (set! removing #t)]
+      [(right-up) (set! removing #f) (send canvas draw)]))))
 
-                      (define (set-and-accumulate x y)
-                        (set! tiles (append tiles (list (list (send scene get x y) x y))))
-                        (change-tile x y))
+(define line-brush% (class* object% (brush-interface)
+  (init-field canvas scene)
 
-                      (define/public (handle mouse-event)
-                        (set! selected-points null)
-                        (case (send mouse-event get-event-type)
-                          [(left-down) (set! drawing #t) (set! origin-pt (evt-clamp canvas mouse-event))]
-                          [(left-up) (set! drawing #f) 
-                            (trace-line set-and-accumulate origin-pt (evt-clamp canvas mouse-event)) 
-                            (add-action-to-history (action 'line tiles))
-                            (set! tiles null)
-                            (send canvas draw)]
-                          [else 
-                          (when drawing
-                            (trace-line select-tile origin-pt 
-                              (evt-clamp canvas mouse-event))
-                            (send canvas draw-selected-tiles))
-                            (void)]))))
+  (field (tile empty-tile))
+
+  (field (selected-points null))
+  (field [drawing #f])
+  (field (origin-pt (pt 0 0)))
+  (field [tiles null])
+
+  (super-new)
+
+  (define/public (get-name) "Line")
+
+  (define/public (set-scene c) (set! scene c))
+
+  (define/public (set-tile t) (set! tile t))
+
+  (define/public (set-canvas c) (set! canvas c))
+
+  (define/public (get-selected-points) selected-points)
+
+  (define (change-tile x y) (send scene set x y tile))
+
+  (define (select-tile x y) 
+      (set! selected-points (append selected-points (list (pt x y)))))
+
+  (define (set-and-accumulate x y)
+    (set! tiles (append tiles (list (list (send scene get x y) x y))))
+    (change-tile x y))
+
+  (define/public (handle mouse-event)
+    (set! selected-points null)
+    (case (send mouse-event get-event-type)
+      [(left-down) (set! drawing #t) (set! origin-pt (evt-clamp canvas mouse-event))]
+      [(left-up) (set! drawing #f) 
+        (trace-line set-and-accumulate origin-pt (evt-clamp canvas mouse-event)) 
+        (add-action-to-history (action 'line tiles))
+        (set! tiles null)
+        (send canvas draw)]
+      [else 
+      (when drawing
+        (trace-line select-tile origin-pt 
+          (evt-clamp canvas mouse-event))
+        (send canvas draw-selected-tiles))
+        (void)]))))
 
