@@ -30,28 +30,30 @@
 	(send canvas clamp (send evt get-x) (send evt get-y)))
 ;
 (define (trace-line callback p q)
-  (when (> (pt-x p) (pt-x q)) (trace-line callback q p))
-  
   (define dx (abs (- (pt-x q) (pt-x p))))
-  (when (zero? dx) (trace-column callback (pt-x p) (pt-y p) (pt-y q)))
-  
   (define dy (abs (- (pt-y q) (pt-y p))))
-  (when (zero? dy) (trace-row callback (pt-y p) (pt-x p) (pt-x q)))
-
   (define (sign x) (if (< x 0.0) -1.0 1.0))
   (define (next x) (if (>= x (pt-x q)) (pt-x q) (+ 1.0 x)))
-  
-  (let ([error 0.0] [delta-error (if (zero? dx) 0.0 (abs (/ dy dx)))] [y-step (sign (- (pt-y q) (pt-y p)))])
-    (define (loop x y0 e0)
+  (define the-pts null)
+  (define (apply-callback x y) 
+    (when (eq? #f (member (list x y) the-pts))
+      (callback x y)
+      (set! the-pts (append the-pts (list (list x y))))))
+ (define (trace)
+     (let ([error 0.0] [delta-error (if (zero? dx) 0.0 (abs (/ dy dx)))] [y-step (sign (- (pt-y q) (pt-y p)))])
+      (define (loop x y0 e0)
       (unless (= (pt-x q) x)
-        (callback (inexact->exact x) (inexact->exact y0))
+        (apply-callback (inexact->exact x) (inexact->exact y0))
         (apply loop (let f ([y y0] [e (+ e0 delta-error)])
                       (if (>= e 0.5)
-                        (begin (callback (inexact->exact x) (inexact->exact y))
+                        (begin (apply-callback (inexact->exact x) (inexact->exact y))
                                (f (+ y y-step) (- e 1.0)))
-                        (list (next x) y e))))))  
-    (loop (pt-x p) (pt-y p) error)
-    (callback (pt-x q) (pt-y q))))
+                        (list (next x) y e))))))
+    (loop (pt-x p) (pt-y p) error)))
+  (cond [(> (pt-x p) (pt-x q)) (trace-line callback q p)]
+    [(zero? dx) (trace-column apply-callback (pt-x p) (pt-y p) (pt-y q))]
+    [(zero? dy) (trace-row apply-callback (pt-y p) (pt-x p) (pt-x q))]
+    [else (trace)]))
 
 ; (Integer Integer -> Void) Integer Integer Integer -> Void	
 (define (trace-column callback x y0 y1)
