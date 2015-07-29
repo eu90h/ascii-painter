@@ -20,4 +20,3 @@
 ; Returns the distance of the point from the origin (0,0)
 (define (pt-mag p)
 	(sqrt (+ (sqr (pt-x p)) (sqr (pt-y p)))))
-
