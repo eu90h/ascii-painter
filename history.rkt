@@ -34,8 +34,8 @@
 
 ; Scene Action -> Void
 ; Undos a line
-(define (undo-line-action scene action)
-	(map ((curry undo-paint-action) scene) (map action-data action)))
+(define (undo-line-action scene line-action)
+	(map ((curry undo-paint-action) scene) (map action-change-data line-action)))
 
 ; History Scene -> History
 ; undos the last action in the given history on the given scene
