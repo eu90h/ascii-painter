@@ -47,7 +47,6 @@
       (set-tile-callback cur-tile cur-tile-table-offset))))
 
   (define/public (draw)
-    (set-tile-callback cur-tile cur-tile-table-offset)
     (draw-symbol-table) 
     (send container refresh))
 
