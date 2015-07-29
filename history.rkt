@@ -31,9 +31,9 @@
 
 (define (undo-last-action history scene)
 	(if (null? history) history
-		(let ([last-action (last history)])
+		(let ([last-action (if (= 1 (length history)) (first history) (last history))])
 			(case (action-type last-action)
 				[(paint) (undo-paint-action scene (first (action-change-data last-action)))]
 				[(line) (undo-line-action scene (action-change-data last-action))])
-			(if (<= (length history) 1) (set! history null)
+			(if (<= (length history) 1) null
       		(take history (sub1 (length history)))))))
