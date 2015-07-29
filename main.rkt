@@ -22,6 +22,7 @@
 
 (define (set-cur-tile t)
   (set! cur-tile t)
+  (send canvas set-cur-tile t)
   (unless (eq? cur-brush selection-brush) (send cur-brush set-tile t))
 
   (set! fg-color (tile-fg t))
@@ -298,7 +299,8 @@
 (define (switch-brush b)
   (set! cur-brush b)
   (send canvas set-brush b)
-  (unless (eq? cur-brush selection-brush) (send cur-brush set-tile cur-tile)))
+  (unless (eq? cur-brush selection-brush) (send cur-brush set-tile cur-tile))
+  (send cur-brush set-tile cur-tile))
 
 (define brush-paint-btn (new button% [label (send paint-brush get-name)] [parent brush-hpanel] 
   [callback (thunk* (switch-brush paint-brush))]))
@@ -315,6 +317,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (initialize)
+  (switch-brush paint-brush)
+
   (send tile-fg-canvas min-height 50)
   (send tile-bg-canvas min-height 50)
 
@@ -322,8 +326,6 @@
   (send tile-bg-canvas redraw)
     
   (send brush-hpanel set-alignment 'center 'center)
-  
-  (send cur-brush set-tile cur-tile)
 
   (send symbol-canvas min-width 256)
   (send symbol-canvas min-height 256)
