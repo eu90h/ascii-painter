@@ -1,34 +1,24 @@
 #lang racket/gui
 
-(provide colors random-element get-random-color get-random-symbol rect-fill trace-line evt-clamp)
+(provide colors random-element get-random-color get-random-symbol trace-line evt-clamp)
 
 (require "symbol.rkt" "scene.rkt" "point.rkt")
 
-(define (rect-fill scene p q tile)
-	(when (> (pt-mag p) (pt-mag q))
-		(rect-fill q p tile))
+(define colors (send the-color-database get-names)) ; a list of color name strings
 
-	(define min-x (min (pt-x p) (pt-x q)))
-	(define min-y (min (pt-y p) (pt-y q)))
-
-	(define max-x (max (pt-x p) (pt-x q)))
-	(define max-y (max (pt-y p) (pt-y q)))
-
-	(for* ([x (in-range min-x max-x)]
-		   [y (in-range min-y max-y)])
-		(send scene set x y tile)))
-
-(define colors (send the-color-database get-names))
-
+; List -> Any
 (define (random-element list) (list-ref list (random (length list))))
 
+; Void -> Color%
 (define (get-random-color) (send the-color-database find-color (random-element colors)))
 
+; Void -> Chars
 (define (get-random-symbol) (string->symbol (random-element cp437-strings)))
 
 (define (evt-clamp canvas evt)
 	(send canvas clamp (send evt get-x) (send evt get-y)))
-;
+
+; (Integer Integer -> Void) Pt Pt -> Void 
 (define (trace-line callback p q)
   (define dx (abs (- (pt-x q) (pt-x p))))
   (define dy (abs (- (pt-y q) (pt-y p))))

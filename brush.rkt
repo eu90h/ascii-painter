@@ -125,8 +125,6 @@
   (define (good-xy? x y) 
     (and (number-in-interval? x 
       (interval 0 (send scene get-width))) (number-in-interval? y (interval 0 (send scene get-height)))))
-;  (define (good-xy? x y) 
- ;   (and (>= x 0) (>= y 0) (< x (send scene get-width)) (< y (send scene get-height))))
 
   (define (set-and-accumulate x y)
     (when (good-xy? x y)

@@ -17,7 +17,7 @@
   (field [width 16] [height 16] [x-interval (interval 0 (sub1 width))] [y-interval (interval 0 (sub1 height))]
     [data (for/vector ([x width]) 
             (for/vector ([y height]) 
-              (tile (integer->symbol (modulo (+ (* 16 y) x) 255)) 
+              (tile (index->symbol (modulo (+ (* 16 y) x) 255)) 
                     (make-object color% 255 255 255 1.0) 
                     (make-object color% 0 0 0 1.0)
                     (list-ref cp437-strings (modulo (+ (* 16 y) x) 255)))))])
