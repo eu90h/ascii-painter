@@ -1,6 +1,6 @@
 #lang racket
 
-(provide cp437-strings string->symbol symbol->integer symbol->string integer->symbol symbol->index)
+(provide cp437-strings string->symbol symbol->string index->symbol symbol->index)
 
 (define cp437-strings (list
 	"Null"  "☺" "☻" "♥" "♦" "♣" "♠" "•" "◘" "○" "◙" "♂" "♀" "♪" "♫" "☼"
@@ -22,18 +22,26 @@
 	"α" "ß" "Γ" "π" "Σ" "σ" "µ" "τ" "Φ" "Θ" "Ω" "δ" "∞" "φ" "ε" "∩"
 	"≡" "±" "≥" "≤" "⌠" "⌡" "÷" "≈" "°" "∙" "·" "√" "ⁿ" "²" "■"))
 
+; String -> Natural
+; Given a string representation of a cp437 glyph, returns the index of that glyph in cp437-strings
 (define (symbol->index sym)
   (define (f i)
     (when (< i (length cp437-strings))
       (if (eq? (list-ref cp437-strings i) sym) i (f (add1 i)))))
   (f 0))
 
+; String -> Char
+; returns the character representation of a given cp437 glyph string
 (define (string->symbol string)
 	(define (f i l) (cond [(null? l) 0]
 		[(eq? (first l) string) i]
 		[else (f (add1 i) (rest l))]))
 	(integer->char (f 0 cp437-strings)))
-
-(define integer->symbol (compose string->symbol ((curry list-ref) cp437-strings)))
+; Natural -> Char
+; Given an index into cp437-strings, returns the associated character
+(define index->symbol (compose string->symbol ((curry list-ref) cp437-strings)))
+; Char -> String
+; Given a character, returns the associated element of cp437-strings
 (define symbol->string (compose ((curry list-ref) cp437-strings) char->integer))
-(define symbol->integer char->integer)
+
+;(define symbol->integer char->integer)
