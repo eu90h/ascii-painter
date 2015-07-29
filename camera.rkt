@@ -6,6 +6,7 @@
 
 ; a camera object represents the location of a camera within a scene being painted on a given canvas.
 (define camera% (class object%
+  ; Pt Interval Interval Integer Integer
 	(init-field pos scene-x-interval scene-y-interval canvas-width canvas-height)
 
 	(super-new)
@@ -27,6 +28,12 @@
 	(define/public (move dx dy)
 		(set! pos (safe-add (pt dx dy))))
 
+  ; Integer Integer -> Void
+  ; updates the scene boundaries
   (define/public (set-scene-intervals x y) (set! scene-x-interval x) (set! scene-y-interval y))
+
+  ; Integer Integer -> Void
   (define/public (set-position x y) (set! pos (pt x y)))
+
+  ; Void -> Pt
   (define/public (get-position) pos)))
