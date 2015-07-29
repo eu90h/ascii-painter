@@ -34,7 +34,8 @@
   (define/override (on-char key-event)
     (case (send key-event get-key-code)
       [(menu release) (void)]
-      [(escape) (if (eq? 'yes (message-box "Exit" "Are you sure you want to exit?" (new frame% [label ""]) '(yes-no))) (exit) (void))]
+      [(escape) (let ([f (new dialog% [label "Quit?"])]) 
+        (if (eq? 'yes (message-box "Exit" "Are you sure you want to exit?" f '(yes-no))) (exit) (void)) (send f show #f))]
       [(#\z)  (set! history (undo-last-action history scene)) (send this draw)]
       [(up #\w) (send camera move 0 -1) (send this draw)]
       [(left #\a) (send camera move -1 0) (send this draw)]
