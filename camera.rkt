@@ -16,7 +16,7 @@
     	(if (valid-pos? (pt-add pos p)) (pt-add pos p) pos))
 
   	(define/public (set-scene-intervals x y) (set! scene-x-interval x) (set! scene-y-interval y))
-
+    (define/public (set-position x y) (set! pos (pt x y)))
   	(define/public (get-position) pos)
 
   	(define/public (move dx dy)

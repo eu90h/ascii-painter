@@ -3,7 +3,7 @@
 (require racket/serialize ascii-canvas file/gzip file/gunzip 
   "scene.rkt" "symbol.rkt" "brush.rkt" "point.rkt" "util.rkt" 
   "generator.rkt" "history.rkt" "interval.rkt" "camera.rkt"
-  "tile-canvas.rkt" "symbol-canvas.rkt")
+  "main-canvas.rkt" "symbol-canvas.rkt")
 
 (define history null)
 (define rooms null)
@@ -124,6 +124,7 @@
 (define (change-scene s)
   (set! scene s)
   (map (lambda (b) (send b set-scene s)) brushes)
+  (send camera set-position 0 0)
   (send canvas set-scene s)
   (send camera set-scene-intervals (interval 0 (sub1 (send scene get-width))) (interval 0 (sub1 (send scene get-height))))
   (send canvas set-scene-intervals (interval 0 (sub1 (send scene get-width))) (interval 0 (sub1 (send scene get-height))))
