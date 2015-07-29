@@ -8,9 +8,7 @@ place tiles in the exact area you need them.
 This tool would be good for creating static city/town levels for instance.
 Screenshots
 -----------
-A quick snow scene I threw together - https://i.imgur.com/1d1yxdg.jpg
-
-"Blood River" (located in the examples folder) - https://imgur.com/NRjIyN1
+["Blood River" (located in the examples folder)](https://imgur.com/U4cHvWG)
 
 Usage
 -----
