@@ -39,6 +39,7 @@
     (iter l 0))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define canvas-width 60)
 (define canvas-height 40)
 
@@ -177,7 +178,6 @@
     (send symbol-canvas symbol-table-lookup (first cur-tile-table-offset) (second cur-tile-table-offset)))
   (send tile-fg-canvas redraw))
 
-
 (define bg-color-panel (new vertical-panel% [parent canvas-left-panel]))
 
 (define tile-bg-msg (new message% [parent bg-color-panel] [label "Background"]))
@@ -266,8 +266,8 @@
 (define brush-line-btn (new button% [label "Line"] [parent brush-hpanel] 
                             [callback (thunk* (switch-brush line-brush))]))
 
-(define brush-selection-btn (new button% [label "Selector"] [parent brush-hpanel] 
-                                 [callback (thunk* (switch-brush selection-brush))]))
+;(define brush-selection-btn (new button% [label "Selector"] [parent brush-hpanel] 
+ ;                                [callback (thunk* (switch-brush selection-brush))]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
