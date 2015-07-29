@@ -83,5 +83,5 @@
   (define/public (draw) 
     (scene-draw)
     (draw-tile cur-tile (pt-x last-mouse-pt) (pt-y last-mouse-pt))
-  ;  (when (eq? cur-brush line-brush) (draw-selected-tiles))  
+    (when (eq? (send cur-brush get-name) "Line") (draw-selected-tiles))  
     (send container refresh))))
