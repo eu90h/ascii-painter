@@ -150,14 +150,14 @@
     (set! rooms (append rooms (list (send gen get-room))))
     (send canvas draw)))
 
-(define rectangle-generator-menu (new menu-item% (label "Rectangle") (parent generator-menu) (callback rectangle-generator-callback)))
+(define rectangle-generator-menu (new menu-item% (label "Random Rectangle") (parent generator-menu) (callback rectangle-generator-callback)))
 
 (define (room-connector-generator-callback menu evt)
   (let ([gen (make-object room-connector-generator% scene canvas tiles rooms (length rooms))])
     (send gen process)
     (send canvas draw)))
 
- (define room-connector-generator-menu (new menu-item% (label "Room Connector") (parent generator-menu) (callback room-connector-generator-callback)))
+ ;(define room-connector-generator-menu (new menu-item% (label "Room Connector") (parent generator-menu) (callback room-connector-generator-callback)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
