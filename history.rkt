@@ -11,29 +11,39 @@
 
 (define (history-add-action history a) (when (action? a) (append history (list a))))
 
+; History List[Action] -> History
+; Adds a list of actions to a history
 (define (history-add-actions history actions) 
 	(if (null? actions) history (history-add-actions 
 		(history-add-action history (first actions))
 		(rest actions))))
 
+; History Scene Natural Natural Tile -> History
+; paint a scene's tile at the given coordinates and then returns a history with the paint action added
 (define (set-and-add-to-history history scene x y tile)
 	(when (>= (length history) HISTORY-MAX) (drop history HISTORY-DROP))
 	(define new-history (history-add-action history (action 'paint (list (list (send scene get x y) x y)))))
   	(send scene set x y tile)
   	new-history)
 
-(define (undo-paint-action scene action-datum)
-	(let* ([t (first action-datum)] [x (second action-datum)] [y (third action-datum)])
+; Scene Action -> Void
+; Undos the placement of a single tile
+(define (undo-paint-action scene action)
+	(let* ([action-datum (first (action-change-data action))] [t (first action-datum)] [x (second action-datum)] [y (third action-datum)])
 		(send scene set x y t)))
 
-(define (undo-line-action scene action-data)
-	(map ((curry undo-paint-action) scene) action-data))
+; Scene Action -> Void
+; Undos a line
+(define (undo-line-action scene action)
+	(map ((curry undo-paint-action) scene) (map action-data action)))
 
+; History Scene -> History
+; undos the last action in the given history on the given scene
 (define (undo-last-action history scene)
 	(if (null? history) history
 		(let ([last-action (if (= 1 (length history)) (first history) (last history))])
 			(case (action-type last-action)
-				[(paint) (undo-paint-action scene (first (action-change-data last-action)))]
-				[(line) (undo-line-action scene (action-change-data last-action))])
+				[(paint) (undo-paint-action scene last-action)]
+				[(line) (undo-line-action scene last-action)])
 			(if (<= (length history) 1) null
       		(take history (sub1 (length history)))))))
