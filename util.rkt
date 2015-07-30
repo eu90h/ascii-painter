@@ -66,7 +66,7 @@
 		(for ([i (in-range (abs diff))])
 			(callback (+ x1 (* i fact)) y))))
 
-; (Integer Integer -> Void) Integer Integer Integer -> Void
+; (Integer Integer -> Void) Pt Integer -> Void
 ; applies a callback to integer points on a circle of given radius 
 ; (adapted from C code on the Wikipedia article for the Midpoint circle algorithm)
 (define (trace-circle callback p radius)
@@ -87,6 +87,22 @@
         (loop x (add1 y) (+ decisionOver2 1 (* 2 (add1 y))))
         (loop (sub1 x) (add1 y) (+ decisionOver2 1 (* 2 (- (add1 y) (add1 x))))))))
   (loop radius 0 (- 1 radius)))
+
+; (Integer Integer -> Void) Pt Pt
+; applies a callback to all points within two pts
+(define (trace-filled-rectangle callback p q)
+ (when (> (pt-mag p) (pt-mag q))
+   (trace-rectangle callback q p))
+
+ (define min-x (min (pt-x p) (pt-x q)))
+ (define min-y (min (pt-y p) (pt-y q)))
+
+ (define max-x (max (pt-x p) (pt-x q)))
+ (define max-y (max (pt-y p) (pt-y q)))
+
+ (for* ([x (in-range min-x max-x)]
+        [y (in-range min-y max-y)])
+    (callback x y)))
 
 ; (Integer Integer -> Void) Integer Integer Integer -> Void
 ; applies a callback to integer points on a diamond of given radius
