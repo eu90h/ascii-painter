@@ -1,6 +1,6 @@
 #lang racket/gui
 
-(provide colors random-element get-random-color get-random-symbol trace-line evt-clamp)
+(provide colors random-element get-random-color get-random-symbol trace-line evt-clamp trace-circle)
 
 (require "symbol.rkt" "scene.rkt" "point.rkt")
 
@@ -65,3 +65,23 @@
 	(let* ([diff (- x1 x0)] [fact (if (< 0 diff) -1 1)])
 		(for ([i (in-range (abs diff))])
 			(callback (+ x1 (* i fact)) y))))
+
+; (Integer Integer -> Void) Integer Integer Integer -> Void
+; applies a callback to integer points on a circle of given radius
+(define (trace-circle callback p radius)
+  (define center-x (pt-x p))
+  (define center-y (pt-y p))
+  (define (loop x y r error)
+    (when (< x 0)
+      (callback (- center-x x) (+ center-y y))
+      (callback (- center-x y) (- center-y x))
+      (callback (+ center-x x) (- center-y y))
+      (callback (+ center-x y) (+ center-y x))
+      (let ([new-r error])
+        (cond [(<= new-r y) (let* ([new-y (add1 y)] [new-error (+ error 1 (* 2 new-y))])
+                              (loop x new-y new-r new-error))]
+              [(or (> r x) (> error y)) (let* ([new-x (add1 x)] [new-error (+ error 1 (* 2 new-x))])
+                              (loop new-x y new-r new-error))]
+              [else (loop x y new-r error)]))))
+  (loop (* -1 radius) 0 radius (- 2 (* 2 radius))))
+
