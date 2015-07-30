@@ -104,7 +104,7 @@
         [y (in-range min-y max-y)])
     (callback x y)))
 
-; (Integer Integer -> Void) Integer Integer Integer -> Void
+; (Integer Integer -> Void) Pt Integer -> Void
 ; applies a callback to integer points on a diamond of given radius
 (define (trace-diamond callback p radius)
   (define center-x (pt-x p))
@@ -122,7 +122,7 @@
   (loop (* -1 radius) 0 radius (- 2 (* 1 radius))))
 
 
-; (Integer Integer -> Void) Integer Integer Integer -> Void
+; (Integer Integer -> Void) Pt Integer -> Void
 ; applies a callback to integer points on a "wierd" star shape of given radius
 (define (trace-weird-star callback p radius)
   (define center-x (pt-x p))
@@ -139,7 +139,7 @@
         (loop new-x new-y new-r new-error))))
   (loop (* -1 radius) 0 radius (- 2 (* 2 radius))))
 
-; (Integer Integer -> Void) Integer Integer Integer -> Void
+; (Integer Integer -> Void) Pt Integer -> Void
 ; applies a callback to integer points on a "wierd" rectangular shape of given radius
 (define (trace-weird-rectangle callback p radius)
   (define center-x (pt-x p))
@@ -156,7 +156,7 @@
         (loop new-x new-y new-r new-error))))
   (loop (* -1 radius) 0 radius (- 2 (* 2 radius))))
 
-; (Integer Integer -> Void) Integer Integer Integer -> Void
+; (Integer Integer -> Void) Pt Integer -> Void
 ; applies a callback to integer points on a "weird" circlular shape of given radius
 (define (trace-wierd-circle callback p radius)
   (define center-x (pt-x p))
