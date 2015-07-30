@@ -51,7 +51,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define frame (new frame% [label "Scene Editor"] [style '(no-resize-border)]))
+(define frame (new frame% [label "Ascii-Painter - New Map (60x40)"] [style '(no-resize-border)]))
 (define brush-hpanel (new horizontal-panel% [parent frame]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -74,10 +74,12 @@
     (let ([w (string->number (send width-field get-value))] 
         [h (string->number (send height-field get-value))]
         [t (choice->tile (send tile-choices get-selection))])
-      (change-scene (new scene% [width w] [height h] [tile t]))))
+     ; (send frame set-label (string-append "Ascii-Painter - New Map (" (number->string w) "x" (number->string h) ")"))
+      (change-scene (new scene% [width w] [height h] [tile t]) "")))
 
    (define ok-btn (new button% [label "OK"] [parent hpanel] [callback make-new-scene]))
    (send dialog show #t))
+
 
 (define new-menu (new menu-item% (label "New") (parent file-menu) (callback new-callback)))
 
@@ -85,6 +87,12 @@
 
 (define (save-callback menu evt) 
   (let ([path (put-file)] [tmp (make-temporary-file)])
+   ; (displayln (path->string path))
+   (define w (send scene get-width))
+  (define h (send scene get-height))
+  (send frame set-label 
+    (string-append "Ascii-Painter - " 
+      (last (string-split (path->string path) "/")) " (" (number->string w) "x" (number->string h) ")"))
     (define out (open-output-file tmp #:mode 'binary #:exists 'replace))
     (write (serialize-scene (send scene copy)) out)
     (close-output-port out)
@@ -95,11 +103,14 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (load-callback menu evt)
-  (define in (open-input-file (get-file) #:mode 'binary))
+  (define path (get-file))
+  (define in (open-input-file path #:mode 'binary))
   (define out (open-output-string))
   (gunzip-through-ports in out)
   (close-input-port in)
-  (change-scene (deserialize-scene (read (open-input-string (get-output-string out)))))
+  (change-scene 
+    (deserialize-scene (read (open-input-string (get-output-string out)))) 
+    (last (string-split (path->string path) "/")))
   (close-output-port out))
 
 (define load-menu (new menu-item% (label "Load") (parent file-menu) (callback load-callback)))
@@ -121,8 +132,13 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (change-scene s)
+(define (change-scene s scene-name)
   (set! scene s)
+  (define w (send s get-width))
+  (define h (send s get-height))
+  (send frame set-label 
+    (string-append "Ascii-Painter - " 
+      (if (eq? "" scene-name) "New Scene" scene-name) " (" (number->string w) "x" (number->string h) ")"))
   (map (lambda (b) (send b set-scene s)) brushes)
   (send camera set-position 0 0)
   (send canvas set-scene s)
