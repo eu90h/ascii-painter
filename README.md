@@ -34,11 +34,6 @@ Upcoming Features
 * More random map generators
 * Circle brush
 
-Known Bugs
-----------
-* Error with room connector (don't use it for now, just paint a connection between them)
-* Selection tool disabled right now (this shouldn't effect usability)
-
 Credits
 -------
 * Thanks to jpverkamp for ascii-canvas
