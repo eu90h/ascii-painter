@@ -34,10 +34,6 @@ Upcoming Features
 * More random map generators
 * Circle brush
 
-Known Bugs
-----------
-* Selection tool disabled right now
-
 Credits
 -------
 * Thanks to jpverkamp for ascii-canvas
