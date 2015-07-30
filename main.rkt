@@ -74,7 +74,6 @@
     (let ([w (string->number (send width-field get-value))] 
         [h (string->number (send height-field get-value))]
         [t (choice->tile (send tile-choices get-selection))])
-     ; (send frame set-label (string-append "Ascii-Painter - New Map (" (number->string w) "x" (number->string h) ")"))
       (change-scene (new scene% [width w] [height h] [tile t]) "")))
 
    (define ok-btn (new button% [label "OK"] [parent hpanel] [callback make-new-scene]))
@@ -87,12 +86,11 @@
 
 (define (save-callback menu evt) 
   (let ([path (put-file)] [tmp (make-temporary-file)])
-   ; (displayln (path->string path))
-   (define w (send scene get-width))
-  (define h (send scene get-height))
-  (send frame set-label 
+    (define w (send scene get-width))
+    (define h (send scene get-height))
+    (send frame set-label 
     (string-append "Ascii-Painter - " 
-      (last (string-split (path->string path) "/")) " (" (number->string w) "x" (number->string h) ")"))
+    (last (string-split (path->string path) "/")) " (" (number->string w) "x" (number->string h) ")"))
     (define out (open-output-file tmp #:mode 'binary #:exists 'replace))
     (write (serialize-scene (send scene copy)) out)
     (close-output-port out)
@@ -214,7 +212,7 @@
 
 (define tile-library-panel (new vertical-panel% [parent canvas-left-panel] [style (list 'border)]))
 (define tile-choices-callback (thunk*
-   (set-cur-tile (list-ref tiles (get-tile-index tiles (send tile-choices get-string-selection))))))
+  (set-cur-tile (list-ref tiles (get-tile-index tiles (send tile-choices get-string-selection))))))
 (define tile-choices (new choice% [parent tile-library-panel] [label "Saved Tiles"] [choices (map tile-descr tiles)]
   [callback tile-choices-callback]))
 
@@ -224,9 +222,10 @@
   (define name-field (new text-field% [label "Enter a tile name"] [parent hpanel]))
 
   (define save-tile (thunk*
-    (cond [(eq? "" (send name-field get-value)) (let ([d (new dialog% [label "Error"])])
-                                                  (message-box "Error" "The tile must have a name" d '(ok))
-                                                  (send d show #f))]
+    (cond [(eq? "" (send name-field get-value)) 
+            (let ([d (new dialog% [label "Error"])])
+              (message-box "Error" "The tile must have a name" d '(ok))
+              (send d show #f))]
           [(list? (member (send name-field get-value) (map tile-descr tiles))) 
             (let ([d (new dialog% [label "Error"])])
               (message-box "Error" "A tile with that name is already saved" d '(ok))
@@ -237,7 +236,6 @@
               (send tile-choices append name)
               (send tile-choices set-selection (sub1 (length tiles)))
               (send dialog show #f))])))
-   
    (define ok-btn (new button% [label "OK"] [parent hpanel] [callback save-tile]))
    (send dialog show #t)))
 
