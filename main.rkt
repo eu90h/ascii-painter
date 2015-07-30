@@ -208,15 +208,19 @@
   (define name-field (new text-field% [label "Enter a tile name"] [parent hpanel]))
 
   (define save-tile (thunk*
-    (if (eq? "" (send name-field get-value)) 
-      (let ([d (new dialog% [label "Error"])])
-        (message-box "Error" "The tile must have a name" d '(ok))
-        (send d show #f))
-      (let* ([name (send name-field get-value)] [t (tile (tile-symbol cur-tile) (tile-fg cur-tile) (tile-bg cur-tile) name)])
-        (set! tiles (append tiles (list t)))
-        (send tile-choices append name)
-        (send tile-choices set-selection (sub1 (length tiles)))
-        (send dialog show #f)))))
+    (cond [(eq? "" (send name-field get-value)) (let ([d (new dialog% [label "Error"])])
+                                                  (message-box "Error" "The tile must have a name" d '(ok))
+                                                  (send d show #f))]
+          [(list? (member (send name-field get-value) (map tile-descr tiles))) 
+            (let ([d (new dialog% [label "Error"])])
+              (message-box "Error" "A tile with that name is already saved" d '(ok))
+              (send d show #f))]
+          [else 
+            (let* ([name (send name-field get-value)] [t (tile (tile-symbol cur-tile) (tile-fg cur-tile) (tile-bg cur-tile) name)])
+              (set! tiles (append tiles (list t)))
+              (send tile-choices append name)
+              (send tile-choices set-selection (sub1 (length tiles)))
+              (send dialog show #f))])))
    
    (define ok-btn (new button% [label "OK"] [parent hpanel] [callback save-tile]))
    (send dialog show #t)))
