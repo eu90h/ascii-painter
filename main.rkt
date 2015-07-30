@@ -264,6 +264,7 @@
 (define single-brush (new single-brush% [canvas canvas] [scene scene]))
 (define selection-brush #t)
 (define line-brush (new line-brush% [canvas canvas] [scene scene]))
+(define circle-brush (new circle-brush% [canvas canvas] [scene scene]))
 (define brushes (list paint-brush single-brush line-brush))
 (define cur-brush paint-brush)
 
@@ -281,6 +282,9 @@
 
 (define brush-line-btn (new button% [label "Line"] [parent brush-hpanel] 
                             [callback (thunk* (switch-brush line-brush))]))
+
+(define brush-circle-btn (new button% [label "Circle"] [parent brush-hpanel] 
+                            [callback (thunk* (switch-brush circle-brush))]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
