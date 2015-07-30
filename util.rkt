@@ -67,8 +67,30 @@
 			(callback (+ x1 (* i fact)) y))))
 
 ; (Integer Integer -> Void) Integer Integer Integer -> Void
-; applies a callback to integer points on a circle of given radius
+; applies a callback to integer points on a circle of given radius 
+; (adapted from C code on the Wikipedia article for the Midpoint circle algorithm)
 (define (trace-circle callback p radius)
+  (define center-x (pt-x p))
+  (define center-y (pt-y p))
+  (define (loop x y decisionOver2)
+    (when (>= x y)
+      (callback (+ x center-x) (+ y center-y))
+      (callback (+ y center-x) (+ x center-y))
+      (callback (- center-x x) (+ y center-y))
+      (callback (- center-x y) (+ x center-y))
+
+      (callback (+ x center-x) (- center-y y))
+      (callback (+ y center-x) (- center-y x))
+      (callback (- center-x x) (- center-y y))
+      (callback (- center-x y) (- center-y x))
+      (if (<= decisionOver2 0)
+        (loop x (add1 y) (+ decisionOver2 1 (* 2 (add1 y))))
+        (loop (sub1 x) (add1 y) (+ decisionOver2 1 (* 2 (- (add1 y) (add1 x))))))))
+  (loop radius 0 (- 1 radius)))
+
+; (Integer Integer -> Void) Integer Integer Integer -> Void
+; applies a callback to integer points on a diamond of given radius
+(define (trace-diamond callback p radius)
   (define center-x (pt-x p))
   (define center-y (pt-y p))
   (define (loop x y r error)
@@ -77,11 +99,62 @@
       (callback (- center-x y) (- center-y x))
       (callback (+ center-x x) (- center-y y))
       (callback (+ center-x y) (+ center-y x))
-      (let ([new-r error])
-        (cond [(<= new-r y) (let* ([new-y (add1 y)] [new-error (+ error 1 (* 2 new-y))])
-                              (loop x new-y new-r new-error))]
-              [(or (> r x) (> error y)) (let* ([new-x (add1 x)] [new-error (+ error 1 (* 2 new-x))])
-                              (loop new-x y new-r new-error))]
-              [else (loop x y new-r error)]))))
+      (let ([new-r error] [new-error error] [new-x x] [new-y y])
+        (when (<= new-r y) (set! new-y (add1 new-y)) (set! new-error (+ error 1 (* 2 new-y))))
+        (when (or (> r x) (> error y)) (set! new-x (add1 new-x)) (set! new-error (+ new-error 1 (* 2 new-x))))
+        (loop new-x new-y new-r new-error))))
+  (loop (* -1 radius) 0 radius (- 2 (* 1 radius))))
+
+
+; (Integer Integer -> Void) Integer Integer Integer -> Void
+; applies a callback to integer points on a "wierd" star shape of given radius
+(define (trace-weird-star callback p radius)
+  (define center-x (pt-x p))
+  (define center-y (pt-y p))
+  (define (loop x y r error)
+    (when (< x 0)
+      (callback (- center-x x) (+ center-y y))
+      (callback (- center-x y) (- center-y x))
+      (callback (+ center-x x) (- center-y y))
+      (callback (+ center-x y) (+ center-y x))
+      (let ([new-r error] [new-error error] [new-x x] [new-y y])
+        (when (<= new-r y) (set! new-y (add1 new-y)) (set! new-error (+ error 1 (* 2 y))))
+        (when (or (> r x) (> error y)) (set! new-x (add1 new-x)) (set! new-error (+ error 1 (* 2 x))))
+        (loop new-x new-y new-r new-error))))
   (loop (* -1 radius) 0 radius (- 2 (* 2 radius))))
 
+; (Integer Integer -> Void) Integer Integer Integer -> Void
+; applies a callback to integer points on a "wierd" rectangular shape of given radius
+(define (trace-weird-rectangle callback p radius)
+  (define center-x (pt-x p))
+  (define center-y (pt-y p))
+  (define (loop x y r error)
+    (when (< x 0)
+      (callback (- center-x x) (+ center-y y))
+      (callback (- center-x y) (- center-y x))
+      (callback (+ center-x x) (- center-y y))
+      (callback (+ center-x y) (+ center-y x))
+      (let ([new-r error] [new-error error] [new-x x] [new-y y])
+        (when (<= new-r y) (set! new-y (add1 new-y)) (set! new-error (+ error 1 (* 2 new-y))))
+        (when (or (> r x) (> error y)) (set! new-x (add1 new-x)) (set! new-error (+ error 1 (* 2 new-x))))
+        (loop new-x new-y new-r new-error))))
+  (loop (* -1 radius) 0 radius (- 2 (* 2 radius))))
+
+; (Integer Integer -> Void) Integer Integer Integer -> Void
+; applies a callback to integer points on a "weird" circlular shape of given radius
+(define (trace-wierd-circle callback p radius)
+  (define center-x (pt-x p))
+  (define center-y (pt-y p))
+  (define (loop x y r error)
+    (when (< x 0)
+      (callback (- center-x x) (+ center-y y))
+      (callback (- center-x y) (- center-y x))
+      (callback (+ center-x x) (- center-y y))
+      (callback (+ center-x y) (+ center-y x))
+      (let ([new-r error] [new-error error] [new-x x] [new-y y])
+        (when (<= new-r y) 
+          (set! new-y (add1 new-y)) (set! new-error (+ new-error 1 (* 2 new-y))))
+        (when (or (> r x) (> error y)) 
+          (set! new-x (add1 new-x)) (set! new-error (+ new-error 1 (* 2 new-x))))
+        (loop new-x new-y new-r new-error))))
+  (loop (* -1 radius) 0 radius (- 2 (* 2 radius))))
