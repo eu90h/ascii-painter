@@ -265,7 +265,7 @@
 (define selection-brush #t)
 (define line-brush (new line-brush% [canvas canvas] [scene scene]))
 (define circle-brush (new circle-brush% [canvas canvas] [scene scene]))
-(define brushes (list paint-brush single-brush line-brush))
+(define brushes (list paint-brush single-brush line-brush circle-brush))
 (define cur-brush paint-brush)
 
 (define (switch-brush b)
