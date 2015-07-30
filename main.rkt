@@ -152,13 +152,6 @@
 
 (define rectangle-generator-menu (new menu-item% (label "Random Rectangle") (parent generator-menu) (callback rectangle-generator-callback)))
 
-(define (room-connector-generator-callback menu evt)
-  (let ([gen (make-object room-connector-generator% scene canvas tiles rooms (length rooms))])
-    (send gen process)
-    (send canvas draw)))
-
- ;(define room-connector-generator-menu (new menu-item% (label "Room Connector") (parent generator-menu) (callback room-connector-generator-callback)))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define fg-color-panel (new vertical-panel% [parent canvas-left-panel]))
@@ -215,11 +208,15 @@
   (define name-field (new text-field% [label "Enter a tile name"] [parent hpanel]))
 
   (define save-tile (thunk*
-    (let* ([name (send name-field get-value)] [t (tile (tile-symbol cur-tile) (tile-fg cur-tile) (tile-bg cur-tile) name)])
-      (set! tiles (append tiles (list t)))
-      (send tile-choices append name)
-      (send tile-choices set-selection (sub1 (length tiles)))
-      (send dialog show #f))))
+    (if (eq? "" (send name-field get-value)) 
+      (let ([d (new dialog% [label "Error"])])
+        (message-box "Error" "The tile must have a name" d '(ok))
+        (send d show #f))
+      (let* ([name (send name-field get-value)] [t (tile (tile-symbol cur-tile) (tile-fg cur-tile) (tile-bg cur-tile) name)])
+        (set! tiles (append tiles (list t)))
+        (send tile-choices append name)
+        (send tile-choices set-selection (sub1 (length tiles)))
+        (send dialog show #f)))))
    
    (define ok-btn (new button% [label "OK"] [parent hpanel] [callback save-tile]))
    (send dialog show #t)))
@@ -266,9 +263,6 @@
 
 (define brush-line-btn (new button% [label "Line"] [parent brush-hpanel] 
                             [callback (thunk* (switch-brush line-brush))]))
-
-;(define brush-selection-btn (new button% [label "Selector"] [parent brush-hpanel] 
- ;                                [callback (thunk* (switch-brush selection-brush))]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
