@@ -1,6 +1,7 @@
 #lang racket/gui
 
-(provide colors random-element get-random-color get-random-symbol trace-line evt-clamp trace-circle)
+(provide colors random-element get-random-color get-random-symbol trace-line evt-clamp 
+  trace-circle trace-filled-rectangle)
 
 (require "symbol.rkt" "scene.rkt" "point.rkt")
 
@@ -92,7 +93,7 @@
 ; applies a callback to all points within two pts
 (define (trace-filled-rectangle callback p q)
  (when (> (pt-mag p) (pt-mag q))
-   (trace-rectangle callback q p))
+   (trace-filled-rectangle callback q p))
 
  (define min-x (min (pt-x p) (pt-x q)))
  (define min-y (min (pt-y p) (pt-y q)))
