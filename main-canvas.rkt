@@ -56,10 +56,10 @@
 
   (define/public (get-width-in-chars) width)
 
-(define (scene-draw)
-  (let ([camera-pos (send camera get-position)])
-  (for* ([xi (in-range width)] [yi (in-range height)])
-    (send this draw-tile (send scene get (+ (pt-x camera-pos) xi) (+ (pt-y camera-pos) yi))  xi  yi))))
+  (define (scene-draw)
+    (let ([camera-pos (send camera get-position)])
+      (for* ([xi (in-range width)] [yi (in-range height)])
+        (send this draw-tile (send scene get (+ (pt-x camera-pos) xi) (+ (pt-y camera-pos) yi))  xi  yi))))
 
   (define (good-xy? x y) 
     (and (number-in-interval? x x-interval) (number-in-interval? y y-interval)))
@@ -82,5 +82,5 @@
     (scene-draw)
     (draw-tile cur-tile (pt-x last-mouse-pt) (pt-y last-mouse-pt))
     (when (is-a? cur-brush brush-with-selection-interface) 
-       (draw-selected-tiles (send cur-brush get-selected-points)))
+      (draw-selected-tiles (send cur-brush get-selected-points)))
     (send container refresh))))
