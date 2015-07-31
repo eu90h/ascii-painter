@@ -23,7 +23,7 @@
 (define (set-cur-tile t)
   (set! cur-tile t)
   (send canvas set-cur-tile t)
-  (unless (eq? cur-brush selection-brush) (send cur-brush set-tile t))
+  (send cur-brush set-tile t)
 
   (set! fg-color (tile-fg t))
   (set! bg-color (tile-bg t))
@@ -269,7 +269,7 @@
 (define (switch-brush b)
   (set! cur-brush b)
   (send canvas set-brush b)
-  (unless (eq? cur-brush selection-brush) (send cur-brush set-tile cur-tile))
+  (send cur-brush set-tile cur-tile)
   (send cur-brush set-tile cur-tile))
 
 (define brush-paint-btn (new button% [label (send paint-brush get-name)] [parent brush-hpanel] 
