@@ -262,11 +262,8 @@
 
 (define paint-brush (new paint-brush% [canvas canvas] [scene scene]))
 (define single-brush (new single-brush% [canvas canvas] [scene scene]))
-(define selection-brush #t)
-(define line-brush (new line-brush% [canvas canvas] [scene scene]))
-(define circle-brush (new circle-brush% [canvas canvas] [scene scene]))
-(define filled-rectangle-brush (new filled-rectangle-brush% [canvas canvas] [scene scene]))
-(define brushes (list paint-brush single-brush line-brush circle-brush filled-rectangle-brush))
+(define shape-brush (new shape-brush% [canvas canvas] [scene scene]))
+(define brushes (list paint-brush single-brush shape-brush))
 (define cur-brush paint-brush)
 
 (define (switch-brush b)
@@ -279,16 +276,15 @@
   [callback (thunk* (switch-brush paint-brush))]))
 
 (define brush-single-btn (new button% [label "Single"] [parent brush-hpanel] 
-                              [callback (thunk* (switch-brush single-brush))]))
+  [callback (thunk* (switch-brush single-brush))]))
 
-(define brush-line-btn (new button% [label "Line"] [parent brush-hpanel] 
-                            [callback (thunk* (switch-brush line-brush))]))
+(define shape-brush-btn (new button% [label "Shape"] [parent brush-hpanel]
+  [callback (thunk* (switch-brush shape-brush))]))
 
-(define brush-circle-btn (new button% [label "Circle"] [parent brush-hpanel] 
-                            [callback (thunk* (switch-brush circle-brush))]))
+(define (shape-choice-callback btn evt)
+  (send shape-brush set-shape (send shape-choice get-string (send shape-choice get-selection))))
 
-(define brush-filled-rectangle-btn (new button% [label "Filled Rectangle"] [parent brush-hpanel] 
-                            [callback (thunk* (switch-brush filled-rectangle-brush))]))
+(define shape-choice (new choice% [label "Shapes"] [parent brush-hpanel] [choices (send shape-brush get-shapes)] [callback shape-choice-callback]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
