@@ -99,16 +99,10 @@
 (define shape-brush% (class* object% (brush-with-selection-interface)
   (init-field canvas scene)
 
-  (field [tile empty-tile])
-  (field [history null])
-  (field (selected-points null))
-  (field [placing #f])
-  (field [initial-pt (pt 0 0)])
-  (field [tiles-drawn null])
-  (field [radius 4])
-  (field [tracer trace-line])
-  (field [shape "line"])
-  (field [shapes (list "line" "filled-rectangle" "circle" "weird-circle" "weird-rectangle" "weird-star" "diamond")])
+  (field [tile empty-tile] [history null] (selected-points null) [placing #f] [initial-pt (pt 0 0)]
+    [tiles-drawn null] [radius 4] [tracer trace-line] [shape "line"] 
+    [shapes (list "line" "filled-rectangle" "circle" "weird-circle" "weird-rectangle" "weird-star" "diamond")])
+
   (super-new)
 
   (define (good-xy? x y) 
