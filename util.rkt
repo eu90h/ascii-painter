@@ -2,7 +2,7 @@
 
 (provide colors random-element get-random-color get-random-symbol trace-line evt-clamp 
   trace-circle trace-filled-rectangle trace-weird-star trace-weird-rectangle trace-weird-circle
-  trace-diamond paint-scene)
+  trace-diamond paint-scene get-random-integer get-random-pt)
 
 (require "symbol.rkt" "scene.rkt" "point.rkt" "history.rkt")
 
@@ -19,6 +19,14 @@
 ; Void -> Char
 ; returns a random cp437 character
 (define (get-random-symbol) (string->symbol (random-element cp437-strings)))
+
+; Integer Integer -> Integer
+; returns a random integer between two integers (inclusive)
+(define (get-random-integer min max) (+ min (random max)))
+
+; Void -> Pt
+; returns a random point
+(define (get-random-pt xmin xmax ymin ymax) (pt (get-random-integer xmin xmax) (get-random-integer ymin ymax)))
 
 ; Canvas% Event -> Void
 ; takes a mouse event and clamps the mouse event coordinates to the given canvas

@@ -157,12 +157,12 @@
 (define uniform-random-fill-generator-menu (new menu-item% (label "Randomly Place") (parent generator-menu) (callback uniform-random-fill-generator-callback)))
 
 (define (rectangle-generator-callback menu evt)
-  (let ([gen (make-object rectangle-generator% scene canvas tiles rooms)])
+  (let ([gen (make-object rogue-dungeon-generator% scene canvas tiles rooms)])
     (send gen process)
     (set! rooms (append rooms (list (send gen get-room))))
-    (send canvas draw)))
+    (send canvas scene-draw)))
 
-(define rectangle-generator-menu (new menu-item% (label "Random Rectangle") (parent generator-menu) (callback rectangle-generator-callback)))
+(define rectangle-generator-menu (new menu-item% (label "Rogue-style Dungeon Generator") (parent generator-menu) (callback rectangle-generator-callback)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
