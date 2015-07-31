@@ -105,8 +105,8 @@
  (define min-x (min (pt-x p) (pt-x q)))
  (define min-y (min (pt-y p) (pt-y q)))
 
- (define max-x (max (pt-x p) (pt-x q)))
- (define max-y (max (pt-y p) (pt-y q)))
+ (define max-x (add1 (max (pt-x p) (pt-x q))))
+ (define max-y (add1 (max (pt-y p) (pt-y q))))
 
  (for* ([x (in-range min-x max-x)]
         [y (in-range min-y max-y)])
