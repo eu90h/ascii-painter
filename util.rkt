@@ -59,14 +59,14 @@
 ; applies a callback to every point on a vertical line
 (define (trace-column callback x y0 y1)
 	(let* ([diff (- y1 y0)] [fact (if (< 0 diff) -1 1)])
-		(for ([i (in-range (abs diff))])
+		(for ([i (in-range (add1 (abs diff)))])
 			(callback x (+ y1 (* i fact))))))
 
 ; (Integer Integer -> Void) Integer Integer Integer -> Void
 ; applies a callback to every point on a horizontal line
 (define (trace-row callback y x0 x1)
 	(let* ([diff (- x1 x0)] [fact (if (< 0 diff) -1 1)])
-		(for ([i (in-range (abs diff))])
+		(for ([i (in-range (add1 (abs diff)))])
 			(callback (+ x1 (* i fact)) y))))
 
 ; (Integer Integer -> Void) Pt Integer -> Void
