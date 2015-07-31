@@ -105,7 +105,7 @@
   (field [tile empty-tile])
   (field [history null])
   (field (selected-points null))
-  (field [drawing #f])
+  (field [placing #f])
   (field [initial-pt (pt 0 0)])
   (field [tiles-drawn null])
   (field [radius 4])
@@ -127,7 +127,7 @@
       (send scene set x y tile)))
 
   (define (handle-left-down mouse-event)
-    (set! drawing #t)
+    (set! placing #t)
     (set! initial-pt (evt-clamp canvas mouse-event)))
 
   (define (build-tracer-args mouse-event)
@@ -136,14 +136,14 @@
       [("circle" "weird-circle" "weird-rectangle" "weird-star" "diamond") (list (evt-clamp canvas mouse-event) radius)]))
 
   (define (handle-left-up mouse-event)
-    (set! drawing #f)
+    (set! placing #f)
     (apply ((curry tracer) set-and-accumulate) (build-tracer-args mouse-event))
     (send canvas draw)
     (set! history (history-add-action history (action 'compound (map (lambda (t) (action 'atomic (list t))) tiles-drawn))))
     (set! tiles-drawn null))
 
   (define (handle-select mouse-event)
-    (when drawing
+    (unless (and (list? (member shape (list "line" "filled-rectangle"))) (not placing))
       (apply tracer select-tile (build-tracer-args mouse-event))
       (send canvas draw-selected-tiles selected-points)))
 
