@@ -100,7 +100,7 @@
   (init-field canvas scene)
 
   (field [tile empty-tile] [history null] (selected-points null) [placing #f] [initial-pt (pt 0 0)]
-    [tiles-drawn null] [radius 4] [tracer trace-line] [shape "line"] 
+    [tiles-drawn null] [radius 4] [tracer trace-line] [shape "line"]
     [shapes (list "line" "filled-rectangle" "circle" "weird-circle" "weird-rectangle" "weird-star" "diamond")])
 
   (super-new)
@@ -158,6 +158,7 @@
   (define/public (set-scene c) (set! scene c))
   (define/public (set-canvas c) (set! canvas c))
   (define/public (get-selected-points) selected-points)
+  (define/public (set-radius n) (set! radius n))
 
   (define/public (handle mouse-event)
     (set! selected-points null)
