@@ -1,9 +1,10 @@
 #lang racket/gui
 
 (provide colors random-element get-random-color get-random-symbol trace-line evt-clamp 
-  trace-circle trace-filled-rectangle)
+  trace-circle trace-filled-rectangle trace-weird-star trace-weird-rectangle trace-weird-circle
+  trace-diamond paint-scene)
 
-(require "symbol.rkt" "scene.rkt" "point.rkt")
+(require "symbol.rkt" "scene.rkt" "point.rkt" "history.rkt")
 
 (define colors (send the-color-database get-names)) ; a list of color name strings
 
@@ -159,7 +160,7 @@
 
 ; (Integer Integer -> Void) Pt Integer -> Void
 ; applies a callback to integer points on a "weird" circlular shape of given radius
-(define (trace-wierd-circle callback p radius)
+(define (trace-weird-circle callback p radius)
   (define center-x (pt-x p))
   (define center-y (pt-y p))
   (define (loop x y r error)
@@ -175,3 +176,14 @@
           (set! new-x (add1 new-x)) (set! new-error (+ new-error 1 (* 2 new-x))))
         (loop new-x new-y new-r new-error))))
   (loop (* -1 radius) 0 radius (- 2 (* 2 radius))))
+
+(define HISTORY-MAX 2000) ; max number of items in history
+(define HISTORY-DROP 500) ; how many actions to remove from the history after going over HISTORY-MAX
+
+; History Scene Natural Natural Tile -> History
+; paint a scene's tile at the given coordinates and then returns a history with the paint action added
+(define (paint-scene history scene x y tile)
+  (when (>= (length history) HISTORY-MAX) (drop history HISTORY-DROP))
+  (define new-history (history-add-action history (action 'atomic (list (list (send scene get x y) x y)))))
+    (send scene set x y tile)
+    new-history)
