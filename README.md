@@ -21,7 +21,7 @@ To undo, press z.
 
 Features
 --------
-* Brushes (Paintbrush, single painter, line brush)
+* Brushes (Paintbrush, single painter, shape brush)
 * Generators (Fill map, Random Placement, Random Rectangle)
 * Full color support
 * All glyphs in code-page 437 supported
@@ -32,7 +32,6 @@ Upcoming Features
 -----------------
 * Saving and loading maps using the rexpaint .xp format
 * More random map generators
-* Circle brush
 
 Credits
 -------
