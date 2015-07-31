@@ -267,7 +267,9 @@
 (define (switch-brush b)
   (set! cur-brush b)
   (send canvas set-brush b)
-  (send cur-brush set-tile cur-tile))
+  (send cur-brush set-tile cur-tile)
+  (send shape-size-slider show (and (eq? cur-brush shape-brush)
+                                    (false? (member (send cur-brush get-shape) (list "line" "filled-rectangle"))))))
 
 (define brush-paint-btn (new button% [label (send paint-brush get-name)] [parent brush-hpanel] 
   [callback (thunk* (switch-brush paint-brush))]))
@@ -281,7 +283,8 @@
 (define (shape-choice-callback btn evt)
   (define shape (send shape-choice get-string (send shape-choice get-selection)))
   (send shape-brush set-shape shape)
-  (send shape-size-slider show (false? (member shape (list "line" "filled-rectangle")))))
+  (send shape-size-slider show (and (eq? cur-brush shape-brush)
+                                    (false? (member shape (list "line" "filled-rectangle"))))))
 
 (define shape-choice (new choice% [label "Shapes"] [parent brush-hpanel] [choices (send shape-brush get-shapes)] [callback shape-choice-callback]))
 
@@ -299,7 +302,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (initialize)
-   (send shape-size-slider show #f)
+  (send shape-size-slider show #f)
   (switch-brush paint-brush)
 
   (send tile-fg-canvas min-height 50)
