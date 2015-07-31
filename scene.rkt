@@ -1,6 +1,6 @@
 #lang racket/gui
 
-(provide scene% empty-tile (struct-out tile) serialize-scene deserialize-scene)
+(provide scene% empty-tile selection-tile (struct-out tile) serialize-scene deserialize-scene)
 
 (require racket/serialize "interval.rkt")
 
@@ -8,6 +8,7 @@
 (serializable-struct tile (symbol fg bg descr) #:transparent) ; the atomic unit of which scenes are composed is the tile
 
 (define empty-tile (tile #\# (make-object color% 0 0 0 1.0) (make-object color% 0 0 0 1.0) "empty"))
+(define selection-tile (tile #\X (make-object color% 255 255 0 1.0) (make-object color% 0 0 0 1.0) "Crosshair"))
 
 ; this is a serializable version of the color% object. since color% objects aren't serializable, this is necessary.
 (define-serializable-class serial-color% object% (init-field red green blue [alpha 1.0]) 

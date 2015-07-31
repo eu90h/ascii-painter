@@ -16,6 +16,7 @@
   (field [y-scale (/ (send this get-height) height)])
   (field [last-mouse-pt (pt 0 0)])
   (field [last-selected-points null])
+
   (define/public (set-history h) (set! history h))
   (define/public (get-history) history)
   (define/public (set-cur-tile t) (set! cur-tile t))
@@ -36,11 +37,11 @@
       [(menu release) (void)]
       [(escape) (let ([f (new dialog% [label "Quit?"])]) 
         (if (eq? 'yes (message-box "Exit" "Are you sure you want to exit?" f '(yes-no))) (exit) (void)) (send f show #f))]
-      [(#\z)  (set! history (undo-last-action history scene)) (send this draw)]
-      [(up #\w) (send camera move 0 -1) (send this draw)]
-      [(left #\a) (send camera move -1 0) (send this draw)]
-      [(down #\s) (send camera move 0 1) (send this draw)]
-      [(right #\d) (send camera move 1 0) (send this draw)])
+      [(#\z)  (set! history (undo-last-action history scene)) (send this scene-draw)]
+      [(up #\w) (send camera move 0 -1) (send this scene-draw)]
+      [(left #\a) (send camera move -1 0) (send this scene-draw)]
+      [(down #\s) (send camera move 0 1) (send this scene-draw)]
+      [(right #\d) (send camera move 1 0) (send this scene-draw)])
     this)
 
   (define/override (on-event mouse-event)
@@ -50,18 +51,20 @@
           (draw-tile (send scene get (pt-x last-mouse-pt) (pt-y last-mouse-pt)) 
             (pt-x last-mouse-pt) (pt-y last-mouse-pt))
           (draw-tile cur-tile (pt-x p) (pt-y p))
+          (unless (null? last-selected-points)
+            (unselect-tiles last-selected-points))
           (send container refresh)
-          (set! last-mouse-pt q)))
-      (send cur-brush handle mouse-event) 
-      (set! history (history-add-actions history (send cur-brush get-history)))))
-      ;(send this draw)))
+          (set! last-mouse-pt q))
+      (send cur-brush handle mouse-event)
+      (set! history (history-add-actions history (send cur-brush get-history))))))
 
   (define/public (get-width-in-chars) width)
 
-  (define (scene-draw)
+  (define/public (scene-draw)
     (let ([camera-pos (send camera get-position)])
       (for* ([xi (in-range width)] [yi (in-range height)])
-        (send this draw-tile (send scene get (+ (pt-x camera-pos) xi) (+ (pt-y camera-pos) yi))  xi  yi))))
+        (send this draw-tile (send scene get (+ (pt-x camera-pos) xi) (+ (pt-y camera-pos) yi))  xi  yi)))
+    (send container refresh))
 
   (define (good-xy? x y) 
     (and (number-in-interval? x x-interval) (number-in-interval? y y-interval)))
@@ -70,7 +73,7 @@
     (when (good-xy? canvas-x canvas-y)
       (send this write (tile-symbol tile) canvas-x canvas-y (tile-fg tile) (tile-bg tile))))
 
-  (define/public (unselect-tiles ts)
+  (define (unselect-tiles ts)
     (define selected-points ts)
     (define camera-pos (send camera get-position))
     (for ([i (in-range (length selected-points))])
@@ -78,23 +81,16 @@
       (define t (send scene get (pt-x p) (pt-y p)))
       (send this draw-tile t
         (- (pt-x p) (pt-x camera-pos))
-        (- (pt-y p) (pt-y camera-pos)))))
+        (- (pt-y p) (pt-y camera-pos))))
+    (set! last-selected-points null))
 
   (define/public (draw-selected-tiles ts)
-    (unless (null? last-selected-points)
-      (unselect-tiles last-selected-points))
     (set! last-selected-points ts)
     (define selected-points ts)
     (define camera-pos (send camera get-position))
     (for ([i (in-range (length selected-points))])
       (define p (list-ref selected-points i))
       (define t (send scene get (pt-x p) (pt-y p)))
-      (send this draw-tile (tile (tile-symbol t) (make-object color% 255 255 0 1.0) (tile-bg t) (tile-descr t))
+      (send this draw-tile selection-tile
         (- (pt-x p) (pt-x camera-pos))
-        (- (pt-y p) (pt-y camera-pos)))))
-
-  (define/public (draw) 
-    (scene-draw)
-    (draw-tile cur-tile (pt-x last-mouse-pt) (pt-y last-mouse-pt))
-    
-    (send container refresh))))
+        (- (pt-y p) (pt-y camera-pos)))))))

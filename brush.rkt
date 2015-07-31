@@ -88,16 +88,13 @@
           (set! history (paint-scene history scene (pt-x p) (pt-y p) tile)))))
 
   (define/public (handle mouse-event)
-    (let ([true? (compose not false?)])
-      (when (true? drawing) (change-tile (send mouse-event get-x) (send mouse-event get-y))
-        (send canvas draw))
-      (when (true? removing) (remove-tile (send mouse-event get-x) (send mouse-event get-y))
-        (send canvas draw)))
+    (when drawing (change-tile (send mouse-event get-x) (send mouse-event get-y)))
+    (when removing (remove-tile (send mouse-event get-x) (send mouse-event get-y)))
     (case (send mouse-event get-event-type)
       [(left-down) (set! drawing #t) (set! removing #f)]
-      [(left-up) (set! drawing #f) (send canvas draw)]
+      [(left-up) (set! drawing #f)]
       [(right-down) (set! drawing #f) (set! removing #t)]
-      [(right-up) (set! removing #f) (send canvas draw)]))))
+      [(right-up) (set! removing #f)]))))
 
 (define shape-brush% (class* object% (brush-with-selection-interface)
   (init-field canvas scene)
@@ -138,7 +135,7 @@
   (define (handle-left-up mouse-event)
     (set! placing #f)
     (apply ((curry tracer) set-and-accumulate) (build-tracer-args mouse-event))
-    (send canvas draw)
+    (send canvas scene-draw)
     (set! history (history-add-action history (action 'compound (map (lambda (t) (action 'atomic (list t))) tiles-drawn))))
     (set! tiles-drawn null))
 

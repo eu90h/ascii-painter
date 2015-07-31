@@ -13,8 +13,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define selection-tile (tile #\X (make-object color% 255 255 0 1.0) (make-object color% 0 0 0 1.0) "Crosshair"))
-
 (define tiles (list empty-tile))
 
 (define cur-tile empty-tile)
@@ -142,7 +140,7 @@
   (send canvas set-scene s)
   (send camera set-scene-intervals (interval 0 (sub1 (send scene get-width))) (interval 0 (sub1 (send scene get-height))))
   (send canvas set-scene-intervals (interval 0 (sub1 (send scene get-width))) (interval 0 (sub1 (send scene get-height))))
-  (send canvas draw))
+  (send canvas scene-draw))
 
 (define (fill-generator-callback menu evt)
   (let ([fill-generator (make-object fill-generator% scene canvas tiles)])
@@ -308,6 +306,6 @@
 
   (send canvas set-scales (/ (send canvas get-width) canvas-width) (/ (send canvas get-height) canvas-height))
   (send canvas set-canvas-boundary (interval 0 (sub1 canvas-width)) (interval 0 (sub1 canvas-height)))
-  (send canvas draw))
+  (send canvas scene-draw))
 
 (initialize)
