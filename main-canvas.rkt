@@ -15,7 +15,7 @@
   (field [x-scale (/ (send this get-width) width)])
   (field [y-scale (/ (send this get-height) height)])
   (field [last-mouse-pt (pt 0 0)])
-
+  (field [last-selected-points null])
   (define/public (set-history h) (set! history h))
   (define/public (get-history) history)
   (define/public (set-cur-tile t) (set! cur-tile t))
@@ -47,12 +47,14 @@
     (let ([p (send this clamp (send mouse-event get-x) (send mouse-event get-y))])
       (when (pt-within-bounds? p scene-x-interval scene-y-interval)
         (let* ([camera-pos (send camera get-position)] [q (pt-sub p camera-pos)]) 
-          (draw-tile cur-tile (pt-x last-mouse-pt) (pt-y last-mouse-pt))
+          (draw-tile (send scene get (pt-x last-mouse-pt) (pt-y last-mouse-pt)) 
+            (pt-x last-mouse-pt) (pt-y last-mouse-pt))
+          (draw-tile cur-tile (pt-x p) (pt-y p))
           (send container refresh)
           (set! last-mouse-pt q)))
       (send cur-brush handle mouse-event) 
-      (set! history (history-add-actions history (send cur-brush get-history)))
-      (send this draw)))
+      (set! history (history-add-actions history (send cur-brush get-history)))))
+      ;(send this draw)))
 
   (define/public (get-width-in-chars) width)
 
@@ -68,8 +70,21 @@
     (when (good-xy? canvas-x canvas-y)
       (send this write (tile-symbol tile) canvas-x canvas-y (tile-fg tile) (tile-bg tile))))
 
-  (define/public (draw-selected-tiles t)
-    (define selected-points t)
+  (define/public (unselect-tiles ts)
+    (define selected-points ts)
+    (define camera-pos (send camera get-position))
+    (for ([i (in-range (length selected-points))])
+      (define p (list-ref selected-points i))
+      (define t (send scene get (pt-x p) (pt-y p)))
+      (send this draw-tile t
+        (- (pt-x p) (pt-x camera-pos))
+        (- (pt-y p) (pt-y camera-pos)))))
+
+  (define/public (draw-selected-tiles ts)
+    (unless (null? last-selected-points)
+      (unselect-tiles last-selected-points))
+    (set! last-selected-points ts)
+    (define selected-points ts)
     (define camera-pos (send camera get-position))
     (for ([i (in-range (length selected-points))])
       (define p (list-ref selected-points i))
@@ -81,6 +96,5 @@
   (define/public (draw) 
     (scene-draw)
     (draw-tile cur-tile (pt-x last-mouse-pt) (pt-y last-mouse-pt))
-    (when (is-a? cur-brush brush-with-selection-interface) 
-      (draw-selected-tiles (send cur-brush get-selected-points)))
+    
     (send container refresh))))
