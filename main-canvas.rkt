@@ -29,6 +29,7 @@
 
   (define/public (clamp mx my)
     (let ([camera-pos (send camera get-position)])
+     ;(pt-add (pt (floor (/ mx x-scale)) (floor (/ my y-scale))) camera-pos)))
       (pt (+ (pt-x camera-pos) (floor (/ mx x-scale)))
           (+ (pt-y camera-pos) (floor (/ my y-scale))))))
 
@@ -48,30 +49,31 @@
     (let ([p (send this clamp (send mouse-event get-x) (send mouse-event get-y))])
       (when (pt-within-bounds? p scene-x-interval scene-y-interval)
         (let* ([camera-pos (send camera get-position)] [q (pt-sub p camera-pos)]) 
-          (draw-tile (send scene get (pt-x last-mouse-pt) (pt-y last-mouse-pt)) 
+          (draw-tile (send scene get (+ (pt-x camera-pos) (pt-x last-mouse-pt)) (+ (pt-y camera-pos) (pt-y last-mouse-pt)))
             (pt-x last-mouse-pt) (pt-y last-mouse-pt))
-          (draw-tile cur-tile (pt-x p) (pt-y p))
+          (draw-tile cur-tile (pt-x q) (pt-y q))
           (unless (null? last-selected-points)
             (unselect-tiles last-selected-points))
-          (send container refresh)
           (set! last-mouse-pt q))
       (send cur-brush handle mouse-event)
-      (set! history (history-add-actions history (send cur-brush get-history))))))
+      (set! history (history-add-actions history (send cur-brush get-history)))))
+      (send container refresh))
 
   (define/public (get-width-in-chars) width)
 
   (define/public (scene-draw)
     (let ([camera-pos (send camera get-position)])
       (for* ([xi (in-range width)] [yi (in-range height)])
-        (send this draw-tile (send scene get (+ (pt-x camera-pos) xi) (+ (pt-y camera-pos) yi))  xi  yi)))
+        (send this draw-tile (send scene get (+ (pt-x camera-pos) xi) (+ (pt-y camera-pos) yi)) xi yi)))
     (send container refresh))
 
   (define (good-xy? x y) 
-    (and (number-in-interval? x x-interval) (number-in-interval? y y-interval)))
+    (and (number-in-interval? x scene-x-interval) (number-in-interval? y scene-y-interval)))
 
   (define/public (draw-tile tile canvas-x canvas-y)
     (when (good-xy? canvas-x canvas-y)
-      (send this write (tile-symbol tile) canvas-x canvas-y (tile-fg tile) (tile-bg tile))))
+      (send this write (tile-symbol tile) canvas-x canvas-y (tile-fg tile) (tile-bg tile))
+      (send container refresh)))
 
   (define (unselect-tiles ts)
     (define selected-points ts)
