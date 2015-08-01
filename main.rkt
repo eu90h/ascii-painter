@@ -41,7 +41,7 @@
 (define canvas-width 60)
 (define canvas-height 40)
 
-(define scene (new scene% [width canvas-width] [height canvas-height] [tile empty-tile]))
+(define scene (new scene% [width 100] [height 60] [tile empty-tile]))
 
 (define camera 
   (make-object camera% (pt 0 0) 
@@ -49,7 +49,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define frame (new frame% [label "Ascii-Painter - New Map (60x40)"] [style '(no-resize-border)]))
+(define frame (new frame% [label ""] [style '(no-resize-border)]))
 (define brush-hpanel (new horizontal-panel% [parent frame]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -299,7 +299,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (initialize)
-   (send shape-size-slider show #f)
+  (change-scene scene (send frame get-label))
+  (send shape-size-slider show #f)
   (switch-brush paint-brush)
 
   (send tile-fg-canvas min-height 50)
