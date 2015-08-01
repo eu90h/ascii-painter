@@ -159,7 +159,7 @@
 (define (rectangle-generator-callback menu evt)
   (let ([gen (make-object rogue-dungeon-generator% scene canvas tiles rooms)])
     (send gen process)
-    (set! rooms (append rooms (list (send gen get-room))))
+    (set! rooms (send gen get-rooms))
     (send canvas scene-draw)))
 
 (define rectangle-generator-menu (new menu-item% (label "Rogue-style Dungeon Generator") (parent generator-menu) (callback rectangle-generator-callback)))

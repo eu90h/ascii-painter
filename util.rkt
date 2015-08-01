@@ -2,9 +2,9 @@
 
 (provide colors random-element get-random-color get-random-symbol trace-line evt-clamp 
   trace-circle trace-filled-rectangle trace-weird-star trace-weird-rectangle trace-weird-circle
-  trace-diamond paint-scene get-random-integer get-random-pt)
+  trace-diamond paint-scene random-integer get-random-pt random-wall-pt random-interior-pt)
 
-(require "symbol.rkt" "scene.rkt" "point.rkt" "history.rkt")
+(require "symbol.rkt" "scene.rkt" "point.rkt" "history.rkt" "room.rkt")
 
 (define colors (send the-color-database get-names)) ; a list of color name strings
 
@@ -22,11 +22,15 @@
 
 ; Integer Integer -> Integer
 ; returns a random integer between two integers (inclusive)
-(define (get-random-integer min max) (+ min (random max)))
+(define (random-integer min max) (+ min (random max)))
 
 ; Void -> Pt
 ; returns a random point
-(define (get-random-pt xmin xmax ymin ymax) (pt (get-random-integer xmin xmax) (get-random-integer ymin ymax)))
+(define (get-random-pt xmin xmax ymin ymax) (pt (random-integer xmin xmax) (random-integer ymin ymax)))
+
+(define (random-wall-pt r) (random-element (room-wall-pts r)))
+
+(define (random-interior-pt r) (random-element (room-interior-pts r)))
 
 ; Canvas% Event -> Void
 ; takes a mouse event and clamps the mouse event coordinates to the given canvas

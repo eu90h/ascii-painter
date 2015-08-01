@@ -70,37 +70,54 @@
 (define rogue-dungeon-generator% (class object%
   (init-field scene canvas tiles rooms)
 
-  (field [tile null] [new-room null] [xmin 5] [xmax 7] [ymin 5] [ymax 7] [num-rooms 6])
+  (field [new-rooms null] [paths null] [tile null] [xmin 5] [xmax 7] [ymin 5] [ymax 7] [num-rooms 6])
 
   (super-new)
 
-  (define/public (get-room) new-room)
-
-  (define (add-room! r) (set! new-room r))
-
+  (define (add-room! r) (set! new-rooms (append new-rooms (list r))))
   (define dialog (new dialog% [label "Choose a tile"]))
   (define hpanel (new horizontal-panel% [parent dialog]))
   (define tile-choices (new choice% [label "Tiles"] [parent hpanel] [choices (map tile-descr tiles)]))
-
-  (define choice->tile ((curry list-ref) tiles))
+  (define (room-ok? r rs) (and (andmap (lambda (v) (< v 3)) (map (lambda (v) (room-distance v r)) rs)) 
+                              (andmap (lambda (v) (room-intersects? r v)) rs)))
 
   (define (set-tile btn evt)
-    (define (place-rooms n)
+    (send dialog show #f)
+
+    (let place-rooms ([n num-rooms])
       (unless (<= n 0)
-        (let* ([t (choice->tile (send tile-choices get-selection))]
-          [p (get-random-pt 0 (send scene get-width) 0 (send scene get-height))]
-          [width (get-random-integer xmin xmax)] [height (get-random-integer ymin ymax)]
-          [r (room p width height)])
-            (if (room-ok? r rooms)
-              (begin (trace-filled-rectangle (lambda (x y) (begin (send scene set x y t) 
-                                                      (add-room! r)
-                                                      (send dialog show #f)))
-                                      p (pt-add p (pt width height)))
-                    (place-rooms (sub1 n)))
-              (set-tile btn evt)))))
-    (place-rooms num-rooms))
+        (let* ([p (get-random-pt 0 (send scene get-width) 0 (send scene get-height))]
+          [width (random-integer xmin xmax)] [height (random-integer ymin ymax)]
+          [q (pt-add p (pt width height))] [walls null] [interior null])
+            (trace-filled-rectangle (lambda (x y)
+                (if (or (= x (pt-x q)) (= x (pt-x p)) (= y (pt-y p)) (= y (pt-y q)))
+                  (set! walls (append walls (list (pt x y))))
+                  (set! interior (append interior (list (pt x y)))))) p q)
+            (let ([r (room walls interior)])
+              (if (room-ok? r (flatten (append rooms new-rooms)))
+                (begin (set! new-rooms (append new-rooms (list r))) (place-rooms (sub1 n)))
+                (place-rooms n))))))
+
+    (let connect-rooms ([unconnected-rooms new-rooms])
+      (unless (null? unconnected-rooms)
+        (when (= 1 (length unconnected-rooms))
+          (set! unconnected-rooms (append unconnected-rooms (random-element rooms))))
+        (let* ([r1 (random-element unconnected-rooms)]
+              [r2 (random-element (filter (lambda (r) (false? (equal? r r1))) unconnected-rooms))])
+          (let* ([pts null] [p1 (random-wall-pt r1)] [p3 (random-wall-pt r2)] [p2 (pt (pt-x p1) (pt-y p3))])
+            (trace-line (lambda (x y) (set! pts (append pts (list (pt x y))))) p1 p2)
+            (trace-line (lambda (x y) (set! pts (append pts (list (pt x y))))) p2 p3)
+            (set! paths (append paths (list (path r1 r2 pts)))))
+          (connect-rooms (filter (lambda (r) (and (false? (equal? r r1)) (false? (equal? r r2)))) 
+                                unconnected-rooms)))))
+
+    (let ([t (list-ref tiles (send tile-choices get-selection))])
+      (map (lambda (r) (map (lambda (p) (send scene set (pt-x p) (pt-y p) t)) (room-wall-pts r))) new-rooms)
+      (map (lambda (path) (map (lambda (p) (send scene set (pt-x p) (pt-y p) t)) (path-pts path))) paths)))
 
   (define ok-btn (new button% [label "OK"] [parent hpanel] [callback set-tile]))
+ 
+  (define/public (get-rooms) (append rooms new-rooms))
 
   (define/public (process)
     (send dialog show #t))))
