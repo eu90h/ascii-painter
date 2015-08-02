@@ -5,7 +5,7 @@
 (require racket/serialize "interval.rkt")
 
 ; a tile is a Char, Color, Color, String
-(serializable-struct tile (symbol fg bg descr) #:transparent) ; the atomic unit of which scenes are composed is the tile
+(serializable-struct tile (symbol fg bg descr) #:mutable) ; the atomic unit of which scenes are composed is the tile
 
 (define empty-tile (tile #\# (make-object color% 0 0 0 1.0) (make-object color% 0 0 0 1.0) "empty"))
 (define selection-tile (tile #\X (make-object color% 255 255 0 1.0) (make-object color% 0 0 0 1.0) "Crosshair"))

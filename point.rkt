@@ -1,8 +1,12 @@
 #lang racket
 
-(provide (struct-out pt) pt-add pt-sub pt-mag)
+(provide (struct-out pt) 
+	(contract-out 
+		[pt-add (-> (struct/c pt integer? integer?) (struct/c pt integer? integer?) (struct/c pt integer? integer?))]
+		[pt-sub (-> (struct/c pt integer? integer?) (struct/c pt integer? integer?) (struct/c pt integer? integer?))]
+		[pt-mag (-> (struct/c pt integer? integer?) real?)]))
 
-(struct pt (x y) #:transparent)
+(struct pt (x y))
 
 ; Pt Pt -> Pt
 ; Adds two points

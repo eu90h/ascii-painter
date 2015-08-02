@@ -1,28 +1,85 @@
 #lang racket/gui
 
-(provide colors random-element get-random-color get-random-symbol trace-line evt-clamp 
-  trace-circle trace-filled-rectangle trace-weird-star trace-weird-rectangle trace-weird-circle
-  trace-diamond paint-scene random-integer get-random-pt random-wall-pt random-interior-pt)
+(define (color? c) (and (object? c) (is-a? c color%)))
+(define (canvas? c) (and (object? c) (is-a? c canvas%)))
+(define (event? e) (and (object? e) (is-a? e event%)))
+(define (scene? e) (and (object? e) (is-a? e scene%)))
+(provide (contract-out 
+    [colors list?] 
+    [random-element (-> list? any/c)]
+    [get-random-color (-> color?)]  
+    [get-random-symbol (-> char?)]
+    [random-integer (-> integer? integer? integer?)]
+    [get-random-pt 
+        (-> integer? integer? integer? integer? 
+          (struct/c pt integer? integer?))]
+    [evt-clamp (-> canvas? event? (struct/c pt natural-number/c natural-number/c))]
+    [trace-line (-> (-> natural-number/c natural-number/c any) 
+                    (struct/c pt integer? integer?)
+                    (struct/c pt integer? integer?) any)]
+    [trace-filled-rectangle (-> (-> integer? integer? any) 
+                    (struct/c pt integer? integer?)
+                    (struct/c pt integer? integer?) any)]
+    [trace-circle (-> (-> integer? integer? any) 
+                    (struct/c pt integer? integer?)
+                    natural-number/c any)]
+    [trace-weird-circle (-> (-> integer? integer? any) 
+                    (struct/c pt integer? integer?)
+                    natural-number/c any)] 
+    [trace-weird-star (-> (-> integer? integer? any) 
+                    (struct/c pt integer? integer?)
+                    natural-number/c any)]
+    [trace-weird-rectangle (-> (-> integer? integer? any) 
+                    (struct/c pt integer? integer?)
+                    natural-number/c any)]
+    [trace-diamond (-> (-> integer? integer? any) 
+                    (struct/c pt integer? integer?)
+                    natural-number/c any)]
+    [paint-scene (-> list? scene? natural-number/c natural-number/c 
+      (struct/c tile char? color? color? string?) any)])
+  random-wall-pt random-interior-pt)
 
 (require "symbol.rkt" "scene.rkt" "point.rkt" "history.rkt" "room.rkt")
+
+(module+ test
+  (require rackunit))
 
 (define colors (send the-color-database get-names)) ; a list of color name strings
 
 ; List -> Any
 ; returns a random element of a list
-(define (random-element list) (list-ref list (random (length list))))
+(define (random-element list) 
+  (when (list? list) 
+    (if (null? list) null (list-ref list (random (length list))))))
+
+(module+ test
+  (check-eq? null (random-element null))
+  (define (is-a-number-in-list? l v) (and (number? v) (list? (member v l))))
+  (define list-of-nums (build-list (random 100) (lambda (x) (random 100))))
+
+  (check-pred ((curry is-a-number-in-list?) list-of-nums) (random-element list-of-nums))
+  (check-pred void? (random-element (cons 1 2))))
 
 ; Void -> Color%
 ; returns a random color object from the Racket color database
 (define (get-random-color) (send the-color-database find-color (random-element colors)))
 
+(module+ test
+  (check-pred color? (get-random-color)))
+
 ; Void -> Char
 ; returns a random cp437 character
 (define (get-random-symbol) (string->symbol (random-element cp437-strings)))
 
+(module+ test
+  (check-pred char? (get-random-symbol)))
+
 ; Integer Integer -> Integer
 ; returns a random integer between two integers (inclusive)
 (define (random-integer min max) (+ min (random max)))
+
+(module+ test
+  (check-pred integer? (random-integer -99999 99999)))
 
 ; Void -> Pt
 ; returns a random point
@@ -32,7 +89,7 @@
 
 (define (random-interior-pt r) (random-element (room-interior-pts r)))
 
-; Canvas% Event -> Void
+; Canvas% Event -> Pt
 ; takes a mouse event and clamps the mouse event coordinates to the given canvas
 (define (evt-clamp canvas evt)
 	(send canvas clamp (send evt get-x) (send evt get-y)))

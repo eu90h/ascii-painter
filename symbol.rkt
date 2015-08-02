@@ -1,6 +1,11 @@
 #lang racket
 
-(provide cp437-strings string->symbol symbol->string index->symbol symbol->index)
+(provide (contract-out
+	[cp437-strings list?]
+	[string->symbol (-> string? char?)]
+	[symbol->string (-> char? string?)]
+	[index->symbol (-> natural-number/c char?)]
+	[symbol->index (-> char? natural-number/c)]))
 
 (define cp437-strings (list
 	"Null"  "☺" "☻" "♥" "♦" "♣" "♠" "•" "◘" "○" "◙" "♂" "♀" "♪" "♫" "☼"

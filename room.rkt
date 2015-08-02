@@ -5,8 +5,8 @@
 (require quickcheck math/base "point.rkt")
 
 ;(struct rectangle (lower-left-pt width height) #:transparent)
-(struct room (wall-pts interior-pts) #:transparent)
-(struct path (start end pts) #:transparent)
+(struct room (wall-pts interior-pts))
+(struct path (start end pts))
 
 (define (is-interior-pt? r p)
 	(list? (member p (room-interior-pts r))))
