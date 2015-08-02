@@ -2,9 +2,9 @@
 
 (provide colors random-element get-random-color get-random-symbol trace-line evt-clamp 
   trace-circle trace-filled-rectangle trace-weird-star trace-weird-rectangle trace-weird-circle
-  trace-diamond paint-scene)
+  trace-diamond paint-scene random-integer get-random-pt random-wall-pt random-interior-pt)
 
-(require "symbol.rkt" "scene.rkt" "point.rkt" "history.rkt")
+(require "symbol.rkt" "scene.rkt" "point.rkt" "history.rkt" "room.rkt")
 
 (define colors (send the-color-database get-names)) ; a list of color name strings
 
@@ -19,6 +19,18 @@
 ; Void -> Char
 ; returns a random cp437 character
 (define (get-random-symbol) (string->symbol (random-element cp437-strings)))
+
+; Integer Integer -> Integer
+; returns a random integer between two integers (inclusive)
+(define (random-integer min max) (+ min (random max)))
+
+; Void -> Pt
+; returns a random point
+(define (get-random-pt xmin xmax ymin ymax) (pt (random-integer xmin xmax) (random-integer ymin ymax)))
+
+(define (random-wall-pt r) (random-element (room-wall-pts r)))
+
+(define (random-interior-pt r) (random-element (room-interior-pts r)))
 
 ; Canvas% Event -> Void
 ; takes a mouse event and clamps the mouse event coordinates to the given canvas
@@ -58,16 +70,26 @@
 ; (Integer Integer -> Void) Integer Integer Integer -> Void
 ; applies a callback to every point on a vertical line
 (define (trace-column callback x y0 y1)
+<<<<<<< HEAD
 	(let* ([diff (- y1 y0)] [fact (if (< 0 diff) -1 1)])
 		(for ([i (in-range (add1 (abs diff)))])
 			(callback x (+ y1 (* i fact))))))
+=======
+	(for ([y (in-range (min y0 y1) (add1 (max y0 y1)))])
+    (callback x y)))
+>>>>>>> develop
 
 ; (Integer Integer -> Void) Integer Integer Integer -> Void
 ; applies a callback to every point on a horizontal line
 (define (trace-row callback y x0 x1)
+<<<<<<< HEAD
 	(let* ([diff (- x1 x0)] [fact (if (< 0 diff) -1 1)])
 		(for ([i (in-range (add1 (abs diff)))])
 			(callback (+ x1 (* i fact)) y))))
+=======
+	(for ([x (in-range (min x0 x1) (add1 (max x0 x1)))])
+    (callback x y)))
+>>>>>>> develop
 
 ; (Integer Integer -> Void) Pt Integer -> Void
 ; applies a callback to integer points on a circle of given radius 

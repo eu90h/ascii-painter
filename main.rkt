@@ -41,15 +41,21 @@
 (define canvas-width 60)
 (define canvas-height 40)
 
-(define scene (new scene% [width canvas-width] [height canvas-height] [tile empty-tile]))
+(define default-scene-width 100)
+(define default-scene-height 60)
+
+(define title 
+  (string-append "Ascii-Painter - New Scene (" (number->string default-scene-width) "x" (number->string default-scene-height) ")"))
+
+(define scene (new scene% [width default-scene-width] [height default-scene-height] [tile empty-tile]))
 
 (define camera 
   (make-object camera% (pt 0 0) 
-    (interval 0 (sub1 canvas-width)) (interval 0 (sub1 canvas-height)) canvas-width canvas-height))
+    (interval 0 (sub1 default-scene-width)) (interval 0 (sub1 default-scene-height)) canvas-width canvas-height))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define frame (new frame% [label "Ascii-Painter - New Map (60x40)"] [style '(no-resize-border)]))
+(define frame (new frame% [label title] [style '(no-resize-border)]))
 (define brush-hpanel (new horizontal-panel% [parent frame]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -128,18 +134,17 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (change-scene s scene-name)
+(define (change-scene s [scene-name null])
   (set! scene s)
   (define w (send s get-width))
   (define h (send s get-height))
   (send frame set-label 
-    (string-append "Ascii-Painter - " 
-      (if (eq? "" scene-name) "New Scene" scene-name) " (" (number->string w) "x" (number->string h) ")"))
+    (if (null? scene-name) title (string-append "Ascii-Painter - " 
+                                    scene-name " (" (number->string w) "x" (number->string h) ")")))
   (map (lambda (b) (send b set-scene s)) brushes)
   (send camera set-position 0 0)
   (send canvas set-scene s)
   (send camera set-scene-intervals (interval 0 (sub1 (send scene get-width))) (interval 0 (sub1 (send scene get-height))))
-  (send canvas set-scene-intervals (interval 0 (sub1 (send scene get-width))) (interval 0 (sub1 (send scene get-height))))
   (send canvas scene-draw))
 
 (define (fill-generator-callback menu evt)
@@ -152,17 +157,17 @@
 (define (uniform-random-fill-generator-callback menu evt)
   (let ([gen (make-object uniform-random-fill-generator% scene canvas tiles 10)])
     (send gen process)
-    (send canvas draw)))
+    (send canvas scene-draw)))
 
 (define uniform-random-fill-generator-menu (new menu-item% (label "Randomly Place") (parent generator-menu) (callback uniform-random-fill-generator-callback)))
 
-(define (rectangle-generator-callback menu evt)
-  (let ([gen (make-object rectangle-generator% scene canvas tiles rooms)])
-    (send gen process)
-    (set! rooms (append rooms (list (send gen get-room))))
-    (send canvas draw)))
+;(define (rectangle-generator-callback menu evt)
+;  (let ([gen (make-object rogue-dungeon-generator% scene canvas tiles rooms)])
+;    (send gen process)
+;    (set! rooms (send gen get-rooms))
+;    (send canvas scene-draw)))
 
-(define rectangle-generator-menu (new menu-item% (label "Random Rectangle") (parent generator-menu) (callback rectangle-generator-callback)))
+;(define rectangle-generator-menu (new menu-item% (label "Rogue-style Dungeon Generator") (parent generator-menu) (callback rectangle-generator-callback)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -303,6 +308,10 @@
 
 (define (initialize)
   (send shape-size-slider show #f)
+<<<<<<< HEAD
+=======
+
+>>>>>>> develop
   (switch-brush paint-brush)
 
   (send tile-fg-canvas min-height 50)
@@ -322,6 +331,7 @@
 
   (send canvas set-scales (/ (send canvas get-width) canvas-width) (/ (send canvas get-height) canvas-height))
   (send canvas set-canvas-boundary (interval 0 (sub1 canvas-width)) (interval 0 (sub1 canvas-height)))
+  (send canvas set-scene-intervals (interval 0 (sub1 default-scene-width)) (interval 0 (sub1 default-scene-height)))
   (send canvas scene-draw))
 
 (initialize)

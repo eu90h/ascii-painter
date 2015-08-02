@@ -22,7 +22,8 @@
 ; Scene Action -> Void
 ; Undos the placement of a single tile
 (define (undo-atomic-action scene action)
-	(let* ([action-datum (first (action-change-data action))] [t (first action-datum)] [x (second action-datum)] [y (third action-datum)])
+	(let* ([action-datum (first (action-change-data action))] [t (first action-datum)] 
+			[x (second action-datum)] [y (third action-datum)])
 		(send scene set x y t)))
 
 ; Scene Action -> Void
