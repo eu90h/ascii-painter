@@ -41,7 +41,13 @@
 (define canvas-width 60)
 (define canvas-height 40)
 
-(define scene (new scene% [width 100] [height 60] [tile empty-tile]))
+(define default-scene-width 100)
+(define default-scene-height 60)
+
+(define title 
+  (string-append "Ascii-Painter - New Scene (" (number->string default-scene-width) "x" (number->string default-scene-height) ")"))
+
+(define scene (new scene% [width default-scene-width] [height default-scene-height] [tile empty-tile]))
 
 (define camera 
   (make-object camera% (pt 0 0) 
@@ -49,7 +55,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define frame (new frame% [label ""] [style '(no-resize-border)]))
+(define frame (new frame% [label title] [style '(no-resize-border)]))
 (define brush-hpanel (new horizontal-panel% [parent frame]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -128,13 +134,13 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (change-scene s scene-name)
+(define (change-scene s [scene-name null])
   (set! scene s)
   (define w (send s get-width))
   (define h (send s get-height))
   (send frame set-label 
-    (string-append "Ascii-Painter - " 
-      (if (eq? "" scene-name) "New Scene" scene-name) " (" (number->string w) "x" (number->string h) ")"))
+    (if (null? scene-name) title (string-append "Ascii-Painter - " 
+                                    scene-name " (" (number->string w) "x" (number->string h) ")")))
   (map (lambda (b) (send b set-scene s)) brushes)
   (send camera set-position 0 0)
   (send canvas set-scene s)
@@ -152,7 +158,7 @@
 (define (uniform-random-fill-generator-callback menu evt)
   (let ([gen (make-object uniform-random-fill-generator% scene canvas tiles 10)])
     (send gen process)
-    (send canvas draw)))
+    (send canvas scene-draw)))
 
 (define uniform-random-fill-generator-menu (new menu-item% (label "Randomly Place") (parent generator-menu) (callback uniform-random-fill-generator-callback)))
 
@@ -299,7 +305,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (initialize)
-  (change-scene scene (send frame get-label))
   (send shape-size-slider show #f)
   (switch-brush paint-brush)
 

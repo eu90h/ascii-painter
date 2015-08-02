@@ -68,7 +68,7 @@
     (send container refresh))
 
   (define (good-xy? x y) 
-    (and (number-in-interval? x scene-x-interval) (number-in-interval? y scene-y-interval)))
+    (and (number-in-interval? x x-interval) (number-in-interval? y y-interval)))
 
   (define/public (draw-tile tile canvas-x canvas-y)
     (when (good-xy? canvas-x canvas-y)

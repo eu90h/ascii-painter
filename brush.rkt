@@ -88,7 +88,7 @@
     (let ([p (send canvas clamp x y)])
         (when (good-xy? (pt-x p) (pt-y p))
           (set! history (paint-scene history scene (pt-x p) (pt-y p) tile))
-          (send canvas scene-draw))))
+          (send canvas draw-tile tile x y))))
 
   (define/public (handle mouse-event)
     (when drawing (change-tile (send mouse-event get-x) (send mouse-event get-y)))

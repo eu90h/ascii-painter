@@ -4,7 +4,6 @@
 
 (require "scene.rkt" "point.rkt" "util.rkt" "room.rkt")
 
-;; TODO: tons of duplication here with the tile choosing gui - fix this!
 (define fill-generator% (class object%
   (init-field scene canvas tiles)
 
@@ -45,8 +44,9 @@
 
   (define dialog (new dialog% [label "Choose a tile"]))
   (define hpanel (new horizontal-panel% [parent dialog]))
-  (define tile-choices (new list-box% [label ""] [parent hpanel] [choices (map tile-descr tiles)] [style (list 'multiple)]
-                           [min-width 200] [min-height 200]))
+  (define tile-choices 
+    (new list-box% [label ""] [parent hpanel] [choices (map tile-descr tiles)] 
+      [style (list 'multiple)] [min-width 200] [min-height 200]))
 
   (define vpanel (new vertical-panel% [parent hpanel]))
 
@@ -55,7 +55,7 @@
   (define number-field (new text-field% [label "Amount to add"] [parent vpanel]))
 
   (define (set-tile btn evt)
-    (let ([s (send scene copy)] [tiles (map choice->tile (send tile-choices get-selections))])
+    (let ([tiles (map choice->tile (send tile-choices get-selections))])
       (let loop ([n (string->number (send number-field get-value))])
         (place-random-tile tiles)
         (unless (zero? n) (loop (sub1 n)))))
@@ -78,7 +78,7 @@
   (define dialog (new dialog% [label "Choose a tile"]))
   (define hpanel (new horizontal-panel% [parent dialog]))
   (define tile-choices (new choice% [label "Tiles"] [parent hpanel] [choices (map tile-descr tiles)]))
-  (define (room-ok? r rs) (and (andmap (lambda (v) (< v 3)) (map (lambda (v) (room-distance v r)) rs)) 
+  (define (room-ok? r rs) (and (andmap (lambda (v) (< v 3)) (map (lambda (v) (room-distance v r)) rs))
                               (andmap (lambda (v) (room-intersects? r v)) rs)))
 
   (define (set-tile btn evt)
@@ -94,11 +94,11 @@
                   (set! walls (append walls (list (pt x y))))
                   (set! interior (append interior (list (pt x y)))))) p q)
             (let ([r (room walls interior)])
-              (if (room-ok? r (flatten (append rooms new-rooms)))
+              (if (room-ok? r (append rooms new-rooms))
                 (begin (set! new-rooms (append new-rooms (list r))) (place-rooms (sub1 n)))
                 (place-rooms n))))))
 
-    (let connect-rooms ([unconnected-rooms new-rooms])
+    (let connect-rooms ([unconnected-rooms (append rooms new-rooms)])
       (unless (null? unconnected-rooms)
         (when (= 1 (length unconnected-rooms))
           (set! unconnected-rooms (append unconnected-rooms (random-element rooms))))
@@ -108,7 +108,7 @@
             (trace-line (lambda (x y) (set! pts (append pts (list (pt x y))))) p1 p2)
             (trace-line (lambda (x y) (set! pts (append pts (list (pt x y))))) p2 p3)
             (set! paths (append paths (list (path r1 r2 pts)))))
-          (connect-rooms (filter (lambda (r) (and (false? (equal? r r1)) (false? (equal? r r2)))) 
+          (connect-rooms (filter (lambda (r) (and (false? (equal? r r1)) (false? (equal? r r2))))
                                 unconnected-rooms)))))
 
     (let ([t (list-ref tiles (send tile-choices get-selection))])
