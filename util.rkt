@@ -70,26 +70,14 @@
 ; (Integer Integer -> Void) Integer Integer Integer -> Void
 ; applies a callback to every point on a vertical line
 (define (trace-column callback x y0 y1)
-<<<<<<< HEAD
-	(let* ([diff (- y1 y0)] [fact (if (< 0 diff) -1 1)])
-		(for ([i (in-range (add1 (abs diff)))])
-			(callback x (+ y1 (* i fact))))))
-=======
 	(for ([y (in-range (min y0 y1) (add1 (max y0 y1)))])
     (callback x y)))
->>>>>>> develop
 
 ; (Integer Integer -> Void) Integer Integer Integer -> Void
 ; applies a callback to every point on a horizontal line
 (define (trace-row callback y x0 x1)
-<<<<<<< HEAD
-	(let* ([diff (- x1 x0)] [fact (if (< 0 diff) -1 1)])
-		(for ([i (in-range (add1 (abs diff)))])
-			(callback (+ x1 (* i fact)) y))))
-=======
 	(for ([x (in-range (min x0 x1) (add1 (max x0 x1)))])
     (callback x y)))
->>>>>>> develop
 
 ; (Integer Integer -> Void) Pt Integer -> Void
 ; applies a callback to integer points on a circle of given radius 

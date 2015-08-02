@@ -308,10 +308,7 @@
 
 (define (initialize)
   (send shape-size-slider show #f)
-<<<<<<< HEAD
-=======
-
->>>>>>> develop
+  
   (switch-brush paint-brush)
 
   (send tile-fg-canvas min-height 50)
