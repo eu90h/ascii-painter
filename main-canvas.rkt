@@ -30,8 +30,6 @@
   (define/public (clamp mx my)
     (let ([camera-pos (send camera get-position)])
      (pt-add (pt (floor (/ mx x-scale)) (floor (/ my y-scale))) camera-pos)))
-  ;    (pt (+ (pt-x camera-pos) (floor (/ mx x-scale)))
-   ;       (+ (pt-y camera-pos) (floor (/ my y-scale))))))
 
   (define/override (on-char key-event)
     (case (send key-event get-key-code)
@@ -67,8 +65,8 @@
         (send this draw-tile (send scene get (+ (pt-x camera-pos) xi) (+ (pt-y camera-pos) yi)) xi yi)))
     (send container refresh))
 
-  (define (good-xy? x y) 
-    (and (number-in-interval? x scene-x-interval) (number-in-interval? y scene-y-interval)))
+  (define (good-xy? x y)
+    (and (number-in-interval? x x-interval) (number-in-interval? y y-interval)))
 
   (define/public (draw-tile tile canvas-x canvas-y)
     (when (good-xy? canvas-x canvas-y)

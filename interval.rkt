@@ -4,6 +4,7 @@
 
 (require "point.rkt")
 
+; defines a closed interval (includes endpoints)
 (struct interval (left right) #:transparent)
 
 ; Number Interval -> Boolean

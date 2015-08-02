@@ -145,7 +145,6 @@
   (send camera set-position 0 0)
   (send canvas set-scene s)
   (send camera set-scene-intervals (interval 0 (sub1 (send scene get-width))) (interval 0 (sub1 (send scene get-height))))
-  (send canvas set-scene-intervals (interval 0 (sub1 (send scene get-width))) (interval 0 (sub1 (send scene get-height))))
   (send canvas scene-draw))
 
 (define (fill-generator-callback menu evt)
@@ -306,6 +305,7 @@
 
 (define (initialize)
   (send shape-size-slider show #f)
+
   (switch-brush paint-brush)
 
   (send tile-fg-canvas min-height 50)
@@ -325,6 +325,7 @@
 
   (send canvas set-scales (/ (send canvas get-width) canvas-width) (/ (send canvas get-height) canvas-height))
   (send canvas set-canvas-boundary (interval 0 (sub1 canvas-width)) (interval 0 (sub1 canvas-height)))
+  (send canvas set-scene-intervals (interval 0 (sub1 default-scene-width)) (interval 0 (sub1 default-scene-height)))
   (send canvas scene-draw))
 
 (initialize)
