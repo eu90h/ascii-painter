@@ -102,3 +102,14 @@
   (define (draw-symbol-table)
     (for* ([x (in-range width)] [y (in-range height)])
       (draw-tile (symbol-table-lookup x y) x y)))))
+
+(define (color? c) (and (object? c) (is-a? c color%)))
+(define (canvas? c) (and (object? c) (is-a? c canvas%)))
+(define (event? e) (and (object? e) (is-a? e event%)))
+(define (scene? e) (and (object? e) (is-a? e scene%)))
+(define tile/c (struct/c tile char? color? color? string?))
+(define/contract symbol-canvas+c%
+  (class/c [on-event (->m event? void?)]
+    [draw (->m void?)]
+    [draw-tile (->m tile/c natural-number/c natural-number/c void?)])
+  symbol-canvas%)

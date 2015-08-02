@@ -4,39 +4,24 @@
 (define (canvas? c) (and (object? c) (is-a? c canvas%)))
 (define (event? e) (and (object? e) (is-a? e event%)))
 (define (scene? e) (and (object? e) (is-a? e scene%)))
+(define tile/c (struct/c tile char? color? color? string?))
+(define pt/c (struct/c pt integer? integer?))
 (provide (contract-out 
     [colors list?] 
     [random-element (-> list? any/c)]
     [get-random-color (-> color?)]  
     [get-random-symbol (-> char?)]
     [random-integer (-> integer? integer? integer?)]
-    [get-random-pt 
-        (-> integer? integer? integer? integer? 
-          (struct/c pt integer? integer?))]
+    [get-random-pt (-> integer? integer? integer? integer? pt/c)]
     [evt-clamp (-> canvas? event? (struct/c pt natural-number/c natural-number/c))]
-    [trace-line (-> (-> natural-number/c natural-number/c any) 
-                    (struct/c pt integer? integer?)
-                    (struct/c pt integer? integer?) any)]
-    [trace-filled-rectangle (-> (-> integer? integer? any) 
-                    (struct/c pt integer? integer?)
-                    (struct/c pt integer? integer?) any)]
-    [trace-circle (-> (-> integer? integer? any) 
-                    (struct/c pt integer? integer?)
-                    natural-number/c any)]
-    [trace-weird-circle (-> (-> integer? integer? any) 
-                    (struct/c pt integer? integer?)
-                    natural-number/c any)] 
-    [trace-weird-star (-> (-> integer? integer? any) 
-                    (struct/c pt integer? integer?)
-                    natural-number/c any)]
-    [trace-weird-rectangle (-> (-> integer? integer? any) 
-                    (struct/c pt integer? integer?)
-                    natural-number/c any)]
-    [trace-diamond (-> (-> integer? integer? any) 
-                    (struct/c pt integer? integer?)
-                    natural-number/c any)]
-    [paint-scene (-> list? scene? natural-number/c natural-number/c 
-      (struct/c tile char? color? color? string?) any)])
+    [trace-line (-> (-> natural-number/c natural-number/c any) pt/c pt/c any)]
+    [trace-filled-rectangle (-> (-> integer? integer? any) pt/c pt/c any)]
+    [trace-circle (-> (-> integer? integer? any) pt/c natural-number/c any)]
+    [trace-weird-circle (-> (-> integer? integer? any) pt/c natural-number/c any)] 
+    [trace-weird-star (-> (-> integer? integer? any) pt/c natural-number/c any)]
+    [trace-weird-rectangle (-> (-> integer? integer? any) pt/c natural-number/c any)]
+    [trace-diamond (-> (-> integer? integer? any) pt/c natural-number/c any)]
+    [paint-scene (-> list? scene? natural-number/c natural-number/c tile/c any)])
   random-wall-pt random-interior-pt)
 
 (require "symbol.rkt" "scene.rkt" "point.rkt" "history.rkt" "room.rkt")

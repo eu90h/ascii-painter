@@ -94,3 +94,17 @@
       (send this draw-tile selection-tile
         (- (pt-x p) (pt-x camera-pos))
         (- (pt-y p) (pt-y camera-pos)))))))
+
+(define (color? c) (and (object? c) (is-a? c color%)))
+(define (canvas? c) (and (object? c) (is-a? c canvas%)))
+(define (event? e) (and (object? e) (is-a? e event%)))
+(define (scene? e) (and (object? e) (is-a? e scene%)))
+(define tile/c (struct/c tile char? color? color? string?))
+(define pt/c (struct/c pt integer? integer?))
+(define/contract main-canvas+c%
+  (class/c [on-event (->m event? void?)]
+    [clamp (->m natural-number/c natural-number/c pt/c)]
+    [scene-draw (->m void?)]
+    [draw-selected-tiles (->m list? void?)]
+    [draw-tile (->m tile/c natural-number/c natural-number/c void?)])
+  main-canvas%)
