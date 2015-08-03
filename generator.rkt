@@ -59,6 +59,7 @@
       (let loop ([n (string->number (send number-field get-value))])
         (place-random-tile tiles)
         (unless (zero? n) (loop (sub1 n)))))
+    (collect-garbage)
      (send dialog show #f))
  
   (define ok-btn (new button% [label "OK"] [parent vpanel] [callback set-tile]))

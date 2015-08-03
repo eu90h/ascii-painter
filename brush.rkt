@@ -3,7 +3,7 @@
 (provide paint-brush% single-brush%  
   brush-interface brush-with-selection-interface shape-brush%)
 
-(require "scene.rkt" "util.rkt" "point.rkt" "history.rkt")
+(require "scene.rkt" "util.rkt" "point.rkt" "history.rkt" racket/performance-hint racket/unsafe/ops)
 
 (define brush-interface (interface () get-name set-scene set-tile set-canvas handle get-history set-history)) 
 (define brush-with-selection-interface (interface (brush-interface) get-selected-points))
@@ -24,8 +24,8 @@
 	(define/public (set-canvas c) (set! canvas c))
 	(define/public (get-selected-points) selected-points)
 
-	(define (good-xy? x y)
-    (and (>= y 0) (>= x 0) (< x width) (< y height)))
+	(begin-encourage-inline (define (good-xy? x y)
+    (and (unsafe-fx>= y 0) (unsafe-fx>= x 0) (unsafe-fx< x width) (unsafe-fx< y height))))
 
   (define (change-tile x y)
     (let ([p (send canvas clamp x y)])
@@ -59,8 +59,8 @@
   (define/public (set-tile t) (set! tile t))
   (define/public (set-canvas c) (set! canvas c))
 
-  (define (good-xy? x y)
-    (and (>= y 0) (>= x 0) (< x width) (< y height)))
+  (begin-encourage-inline (define (good-xy? x y)
+    (and (unsafe-fx>= y 0) (unsafe-fx>= x 0) (unsafe-fx< x width) (unsafe-fx< y height))))
 
   (define (remove-tile x y) 
     (let ([p (send canvas clamp x y)])
@@ -71,7 +71,7 @@
     (let ([p (send canvas clamp x y)])
         (when (good-xy? (pt-x p) (pt-y p))
           (set! history (paint-scene history scene (pt-x p) (pt-y p) tile))
-          (send canvas draw-tile tile x y))))
+          (send canvas draw-tile tile (pt-x p) (pt-y p)))))
 
   (define/public (handle mouse-event)
     (when drawing (change-tile (send mouse-event get-x) (send mouse-event get-y)))
@@ -92,8 +92,8 @@
 
   (super-new)
 
-  (define (good-xy? x y)
-    (and (>= y 0) (>= x 0) (< x width) (< y height)))
+  (begin-encourage-inline  (define (good-xy? x y)
+    (and (unsafe-fx>= y 0) (unsafe-fx>= x 0) (unsafe-fx< x width) (unsafe-fx< y height))))
 
   (define (select-tile x y) 
       (set! selected-points (append selected-points (list (pt x y)))))

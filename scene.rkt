@@ -8,7 +8,7 @@
 (provide (contract-out
   [struct tile ([symbol char?] [fg color?] [bg color?] [descr string?])]) scene% empty-tile selection-tile serialize-scene deserialize-scene)
 
-(require racket/serialize)
+(require racket/serialize racket/unsafe/ops)
 
 ; a tile is a Char, Color, Color, String
 (serializable-struct tile (symbol fg bg descr)) ; the atomic unit of which scenes are composed is the tile
@@ -79,11 +79,11 @@
   ; Integer Integer -> Boolean
   ; returns true if the given integers lie within the scene's width and height
   (define (good-xy? x y)
-    (and (>= y 0) (>= x 0) (< x width) (< y height)))
+    (and (unsafe-fx>= y 0) (unsafe-fx>= x 0) (unsafe-fx< x width) (unsafe-fx< y height)))
 
   ; Integer Integer -> Tile
   ; retrieves the tile at the given location, unless the location is not good-xy?, in which case return empty-tile
-  (define/public (get x y) (if (good-xy? x y) (vector-ref (vector-ref data y) x) empty-tile))
+  (define/public (get x y) (if (good-xy? x y) (unsafe-vector-ref (unsafe-vector-ref data y) x) empty-tile))
   
   ; Void -> Integer
   (define/public (get-width) width)
@@ -97,7 +97,7 @@
                               (send s set x y (send this get x y))) s))
 
   ; Integer Integer Tile -> Scene
-  (define/public (set x y tile) (when (good-xy? x y) (vector-set! (vector-ref data y) x tile) this))
+  (define/public (set x y tile) (when (good-xy? x y) (unsafe-vector-set! (unsafe-vector-ref data y) x tile) this))
 
   ; (Tile -> Tile) -> Scene
   ; given a callback that takes and returns tiles, applies it to all tiles in the scene and updates them with the
