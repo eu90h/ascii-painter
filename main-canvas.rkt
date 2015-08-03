@@ -16,6 +16,7 @@
   (field [y-scale (/ (send this get-height) height)])
   (field [last-mouse-pt (pt 0 0)])
   (field [last-selected-points null])
+  (field [camera-pos (send camera get-position)])
 
   (define/public (set-history h) (set! history h))
   (define/public (get-history) history)
@@ -28,8 +29,7 @@
   (define/public (set-scene-intervals x y) (set! scene-x-interval x) (set! scene-y-interval y))
 
   (define/public (clamp mx my)
-    (let ([camera-pos (send camera get-position)])
-     (pt-add (pt (floor (/ mx x-scale)) (floor (/ my y-scale))) camera-pos)))
+    (pt-add (pt (floor (/ mx x-scale)) (floor (/ my y-scale))) camera-pos))
 
   (define/override (on-char key-event)
     (case (send key-event get-key-code)
@@ -41,12 +41,13 @@
       [(left #\a) (send camera move -1 0) (send this scene-draw)]
       [(down #\s) (send camera move 0 1) (send this scene-draw)]
       [(right #\d) (send camera move 1 0) (send this scene-draw)])
+    (set! camera-pos (send camera get-position))
     this)
 
   (define/override (on-event mouse-event)
     (let ([p (send this clamp (send mouse-event get-x) (send mouse-event get-y))])
       (when (pt-within-bounds? p scene-x-interval scene-y-interval)
-        (let* ([camera-pos (send camera get-position)] [q (pt-sub p camera-pos)]) 
+        (let ([q (pt-sub p camera-pos)]) 
           (draw-tile (send scene get (+ (pt-x camera-pos) (pt-x last-mouse-pt)) (+ (pt-y camera-pos) (pt-y last-mouse-pt)))
             (pt-x last-mouse-pt) (pt-y last-mouse-pt))
           (draw-tile cur-tile (pt-x q) (pt-y q))
@@ -60,9 +61,9 @@
   (define/public (get-width-in-chars) width)
 
   (define/public (scene-draw)
-    (let ([camera-pos (send camera get-position)])
+    (let ([cx (pt-x camera-pos)] [cy (pt-y camera-pos)])
       (for* ([xi (in-range width)] [yi (in-range height)])
-        (send this draw-tile (send scene get (+ (pt-x camera-pos) xi) (+ (pt-y camera-pos) yi)) xi yi)))
+        (send this draw-tile (send scene get (+ cx xi) (+ cy yi)) xi yi)))
     (send container refresh))
 
   (define (good-xy? x y)
@@ -70,30 +71,27 @@
 
   (define/public (draw-tile tile canvas-x canvas-y)
     (when (good-xy? canvas-x canvas-y)
-      (send this write (tile-symbol tile) canvas-x canvas-y (tile-fg tile) (tile-bg tile))
-      (send container refresh)))
+      (send this write (tile-symbol tile) canvas-x canvas-y (tile-fg tile) (tile-bg tile))))
 
-  (define (unselect-tiles ts)
-    (define selected-points ts)
-    (define camera-pos (send camera get-position))
-    (for ([i (in-range (length selected-points))])
-      (define p (list-ref selected-points i))
-      (define t (send scene get (pt-x p) (pt-y p)))
-      (send this draw-tile t
-        (- (pt-x p) (pt-x camera-pos))
-        (- (pt-y p) (pt-y camera-pos))))
-    (set! last-selected-points null))
+  (define (unselect-tiles points)
+    (set! last-selected-points null)
+    (let ([cx (pt-x camera-pos)] [cy (pt-y camera-pos)] [num-pts (length points)] 
+          [sym (tile-symbol selection-tile)] [fg (tile-fg selection-tile)] [bg (tile-bg selection-tile)])
+      (let loop ([ps points])
+        (unless (null? ps)
+          (let* ([qx (- (pt-x (first ps)) cx)] [qy (- (pt-y (first ps)) cy)] [t (send scene get qx qy)])
+            (send this write (tile-symbol t) qx qy (tile-fg t) (tile-bg t)))
+          (loop (rest ps))))))
 
-  (define/public (draw-selected-tiles ts)
-    (set! last-selected-points ts)
-    (define selected-points ts)
-    (define camera-pos (send camera get-position))
-    (for ([i (in-range (length selected-points))])
-      (define p (list-ref selected-points i))
-      (define t (send scene get (pt-x p) (pt-y p)))
-      (send this draw-tile selection-tile
-        (- (pt-x p) (pt-x camera-pos))
-        (- (pt-y p) (pt-y camera-pos)))))))
+  (define/public (draw-selected-tiles points)
+    (set! last-selected-points points)
+    (let ([cx (pt-x camera-pos)] [cy (pt-y camera-pos)] [num-pts (length points)] 
+          [sym (tile-symbol selection-tile)] [fg (tile-fg selection-tile)] [bg (tile-bg selection-tile)])
+      (let loop ([ps points])
+        (unless (null? ps)
+          (let ([qx (- (pt-x (first ps)) cx)] [qy (- (pt-y (first ps)) cy)])
+            (when (good-xy? qx qy) (send this write sym qx qy fg bg)))
+          (loop (rest ps))))))))
 
 (define (color? c) (and (object? c) (is-a? c color%)))
 (define (canvas? c) (and (object? c) (is-a? c canvas%)))
