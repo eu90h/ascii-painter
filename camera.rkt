@@ -6,11 +6,8 @@
 
 ; a camera object represents the location of a camera within a scene being painted on a given canvas.
 (define camera% (class object%
-  ; Pt Integer Integer Integer Integer
+  ; Pt Interval Interval Integer Integer
 	(init-field pos scene-x-interval scene-y-interval canvas-width canvas-height)
-  
- ; (field [(interval 0 scene-width)l ]
-  ;  [scene-y-interval (interval 0 scene-height)])
 
 	(super-new)
 
@@ -70,8 +67,7 @@
 
   (let ([old-pos (send c get-position)])
     (check-equal? (send c set-position -1 -1) old-pos))
-   ; (check-equal? (send c set-position (+ canvas-width 1 (pt-x (send c get-position))) 0)
-    ;              (pt (+ canvas-width 1 (pt-x old-pos)) 0)))
+
   (let ([old-pos (send c get-position)])
     (check-equal? (send c set-position (interval-right scene-x-interval) 0) old-pos)
     (check-equal? (send c set-position (interval-right scene-x-interval) (interval-left scene-y-interval))
