@@ -86,7 +86,7 @@
 
     (let place-rooms ([n num-rooms])
       (unless (<= n 0)
-        (let* ([p (get-random-pt 0 (send scene get-width) 0 (send scene get-height))]
+        (let* ([p (random-pt 0 (send scene get-width) 0 (send scene get-height))]
           [width (random-integer xmin xmax)] [height (random-integer ymin ymax)]
           [q (pt-add p (pt width height))] [walls null] [interior null])
             (trace-filled-rectangle (lambda (x y)

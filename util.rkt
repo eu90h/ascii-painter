@@ -9,9 +9,9 @@
 (provide (contract-out 
     [colors list?] 
     [random-element (-> list? any/c)]
-    [get-random-color (-> color?)]  
+    [random-color (-> color?)]  
     [random-integer (-> integer? integer? integer?)]
-    [get-random-pt (-> integer? integer? integer? integer? pt/c)]
+    [random-pt (-> integer? integer? integer? integer? pt/c)]
     [evt-clamp (-> canvas? event? (struct/c pt natural-number/c natural-number/c))]
     [trace-line (-> (-> natural-number/c natural-number/c any) pt/c pt/c any)]
     [trace-filled-rectangle (-> (-> integer? integer? any) pt/c pt/c any)]
@@ -46,10 +46,10 @@
 
 ; Void -> Color%
 ; returns a random color object from the Racket color database
-(define (get-random-color) (send the-color-database find-color (random-element colors)))
+(define (random-color) (send the-color-database find-color (random-element colors)))
 
 (module+ test
-  (check-pred color? (get-random-color)))
+  (check-pred color? (random-color)))
 
 ; Integer Integer -> Integer
 ; returns a random integer between two integers (inclusive)
@@ -60,7 +60,7 @@
 
 ; Void -> Pt
 ; returns a random point
-(define (get-random-pt xmin xmax ymin ymax) (pt (random-integer xmin xmax) (random-integer ymin ymax)))
+(define (random-pt xmin xmax ymin ymax) (pt (random-integer xmin xmax) (random-integer ymin ymax)))
 
 (define (random-wall-pt r) (random-element (room-wall-pts r)))
 

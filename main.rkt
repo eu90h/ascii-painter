@@ -2,7 +2,7 @@
 
 (require racket/serialize ascii-canvas file/gzip file/gunzip 
   "scene.rkt" "brush.rkt" "point.rkt" "util.rkt" 
-  "generator.rkt" "history.rkt" "interval.rkt" "camera.rkt"
+  "generator.rkt" "history.rkt"  "camera.rkt"
   "main-canvas.rkt" "symbol-canvas.rkt")
 
 (define history null)
@@ -50,8 +50,7 @@
 (define scene (new scene% [width default-scene-width] [height default-scene-height] [tile empty-tile]))
 
 (define camera 
-  (make-object camera% (pt 0 0) 
-    (interval 0 (sub1 default-scene-width)) (interval 0 (sub1 default-scene-height)) canvas-width canvas-height))
+  (make-object camera% (pt 0 0) default-scene-width default-scene-height canvas-width canvas-height))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -144,7 +143,7 @@
   (map (lambda (b) (send b set-scene s)) brushes)
   (send camera set-position 0 0)
   (send canvas set-scene s)
-  (send camera set-scene-intervals (interval 0 (sub1 (send scene get-width))) (interval 0 (sub1 (send scene get-height))))
+  (send camera set-scene-dimensions w h)
   (send canvas scene-draw))
 
 (define (fill-generator-callback menu evt)
@@ -327,8 +326,6 @@
   (send frame show #t)
 
   (send canvas set-scales (/ (send canvas get-width) canvas-width) (/ (send canvas get-height) canvas-height))
-  (send canvas set-canvas-boundary (interval 0 (sub1 canvas-width)) (interval 0 (sub1 canvas-height)))
-  (send canvas set-scene-intervals (interval 0 (sub1 default-scene-width)) (interval 0 (sub1 default-scene-height)))
   (send canvas scene-draw))
 
 (initialize)

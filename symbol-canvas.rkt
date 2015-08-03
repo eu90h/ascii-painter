@@ -2,7 +2,7 @@
 
 (provide symbol-canvas%)
 
-(require ascii-canvas "scene.rkt" "point.rkt" "interval.rkt" "util.rkt" "history.rkt" "brush.rkt")
+(require ascii-canvas "scene.rkt" "point.rkt" "util.rkt" "history.rkt" "brush.rkt")
 
 (define symbol-canvas% (class ascii-canvas%
   ; Frame% Scene% (Tile Pair -> Any)
@@ -25,7 +25,7 @@
   (field [x-scale (/ (send this get-width) width)] [y-scale (/ (send this get-height) height)])
 
   ; these intervals represent the boundaries of the symbol-canvas
-  (field [x-interval (interval 0 (sub1 width))] [y-interval (interval 0 (sub1 height))])
+  ;(field [x-interval (interval 0 (sub1 width))] [y-interval (interval 0 (sub1 height))])
 
   (field [cp437-strings (list
   "Null"  "☺" "☻" "♥" "♦" "♣" "♠" "•" "◘" "○" "◙" "♂" "♀" "♪" "♫" "☼"
@@ -103,8 +103,8 @@
 
   ; Integer Integer -> Boolean
   ; ensures the integers lie within the canvas boundaries
-  (define (good-xy? x y) 
-    (and (number-in-interval? x x-interval) (number-in-interval? y y-interval)))
+  (define (good-xy? x y)
+    (and (>= y 0) (>= x 0) (< x width) (< y height)))
 
   ; Integer Integer -> Tile
   (define/public (symbol-table-lookup x y) 

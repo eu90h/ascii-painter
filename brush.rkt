@@ -3,32 +3,33 @@
 (provide paint-brush% single-brush%  
   brush-interface brush-with-selection-interface shape-brush%)
 
-(require "scene.rkt" "util.rkt" "point.rkt" "history.rkt" "interval.rkt")
+(require "scene.rkt" "util.rkt" "point.rkt" "history.rkt")
 
 (define brush-interface (interface () get-name set-scene set-tile set-canvas handle get-history set-history)) 
 (define brush-with-selection-interface (interface (brush-interface) get-selected-points))
 
-(define (change-tile canvas history scene x y tile) 
-  (let ([p (send canvas clamp x y)])
-    (send canvas draw)
-    (paint-scene history scene (pt-x p) (pt-y p) tile)))
+;(define (change-tile canvas history scene x y tile) 
+;  (let ([p (send canvas clamp x y)])
+;    (send canvas draw)
+;    (paint-scene history scene (pt-x p) (pt-y p) tile)))
 
-(define (xy-in-scene? scene x y) 
-  (and (number-in-interval? x (interval 0 (sub1 (send scene get-width))))
-    (number-in-interval? y (interval 0 (sub1 (send scene get-height))))))
+;(define (xy-in-scene? scene x y) 
+ ; (and (number-in-interval? x (interval 0 (sub1 (send scene get-width))))
+ ;   (number-in-interval? y (interval 0 (sub1 (send scene get-height))))))
 
-(define (remove-tile canvas history scene x y)  
-    (change-tile canvas history scene x y empty-tile))
+;(define (remove-tile canvas history scene x y)  
+ ;   (change-tile canvas history scene x y empty-tile))
 
-(define (paint-and-append canvas history scene x y tile action-data)
-  (when (xy-in-scene? scene x y)
-    (values (append action-data (list (list (send scene get x y) x y))) 
-            (change-tile canvas history scene x y tile))))
+;(define (paint-and-append canvas history scene x y tile action-data)
+ ; (when (xy-in-scene? scene x y)
+ ;   (values (append action-data (list (list (send scene get x y) x y))) 
+  ;          (change-tile canvas history scene x y tile))))
 
 (define single-brush% (class* object% (brush-with-selection-interface)
 	(init-field canvas scene)
 
-  (field [history null] [tile empty-tile] [selected-points null])
+  (field [history null] [tile empty-tile] [selected-points null] 
+    [width (send scene get-width)] [height (send scene get-height)])
 
 	(super-new)
 
@@ -40,9 +41,8 @@
 	(define/public (set-canvas c) (set! canvas c))
 	(define/public (get-selected-points) selected-points)
 
-	(define (good-xy? x y) 
-    (and (number-in-interval? x (interval 0 (sub1 (send scene get-width))))
-      (number-in-interval? y (interval 0 (sub1 (send scene get-height))))))
+	(define (good-xy? x y)
+    (and (>= y 0) (>= x 0) (< x width) (< y height)))
 
   (define (change-tile x y)
     (let ([p (send canvas clamp x y)])
@@ -64,7 +64,8 @@
 (define paint-brush% (class* object% (brush-interface)
 	(init-field canvas scene)
 
-  (field [history null] [tile empty-tile] [drawing #f] [removing #f])
+  (field [history null] [tile empty-tile] [drawing #f] [removing #f]
+    [width (send scene get-width)] [height (send scene get-height)])
 
   (super-new)
 
@@ -75,9 +76,8 @@
   (define/public (set-tile t) (set! tile t))
   (define/public (set-canvas c) (set! canvas c))
 
-   (define (good-xy? x y) 
-    (and (number-in-interval? x (interval 0 (sub1 (send scene get-width))))
-      (number-in-interval? y (interval 0 (sub1 (send scene get-height))))))
+  (define (good-xy? x y)
+    (and (>= y 0) (>= x 0) (< x width) (< y height)))
 
   (define (remove-tile x y) 
     (let ([p (send canvas clamp x y)])
@@ -104,13 +104,13 @@
 
   (field [tile empty-tile] [history null] (selected-points null) [placing #f] [initial-pt (pt 0 0)]
     [tiles-drawn null] [radius 4] [tracer trace-line] [shape "line"]
-    [shapes (list "line" "filled-rectangle" "circle" "weird-circle" "weird-rectangle" "weird-star" "diamond")])
+    [shapes (list "line" "filled-rectangle" "circle" "weird-circle" "weird-rectangle" "weird-star" "diamond")]
+    [width (send scene get-width)] [height (send scene get-height)])
 
   (super-new)
 
-  (define (good-xy? x y) 
-    (and (number-in-interval? x 
-      (interval 0 (send scene get-width))) (number-in-interval? y (interval 0 (send scene get-height)))))
+  (define (good-xy? x y)
+    (and (>= y 0) (>= x 0) (< x width) (< y height)))
 
   (define (select-tile x y) 
       (set! selected-points (append selected-points (list (pt x y)))))

@@ -1,8 +1,14 @@
 #lang racket/gui
 
-(provide scene% empty-tile selection-tile (struct-out tile) serialize-scene deserialize-scene)
+(define (color? c) (and (object? c) (is-a? c color%)))
+(define (canvas? c) (and (object? c) (is-a? c canvas%)))
+(define (event? e) (and (object? e) (is-a? e event%)))
+(define (scene? e) (and (object? e) (is-a? e scene%)))
 
-(require racket/serialize "interval.rkt")
+(provide (contract-out
+  [struct tile ([symbol char?] [fg color?] [bg color?] [descr string?])]) scene% empty-tile selection-tile serialize-scene deserialize-scene)
+
+(require racket/serialize)
 
 ; a tile is a Char, Color, Color, String
 (serializable-struct tile (symbol fg bg descr)) ; the atomic unit of which scenes are composed is the tile
@@ -63,7 +69,7 @@
   (field (data (for/vector ([y height]) (for/vector ([x width]) tile)))) ; a 2d vector of tiles
 
   ; these intervals represent the boundaries of the scene
-  (field [x-interval (interval 0 (sub1 width))] [y-interval (interval 0 (sub1 height))])
+  ;(field [x-interval (interval 0 (sub1 width))] [y-interval (interval 0 (sub1 height))])
 
   (super-new)
   
@@ -75,8 +81,8 @@
 
   ; Integer Integer -> Boolean
   ; returns true if the given integers lie within the scene's width and height
-  (define (good-xy? x y) 
-    (and (number-in-interval? x x-interval) (number-in-interval? y y-interval)))
+  (define (good-xy? x y)
+    (and (>= y 0) (>= x 0) (< x width) (< y height)))
 
   ; Integer Integer -> Tile
   ; retrieves the tile at the given location, unless the location is not good-xy?, in which case return empty-tile
@@ -92,8 +98,7 @@
   (define/public (copy) (let ([s (make-object scene% width height tile)])
                           (for* ([x (in-range width)] [y (in-range height)])
                               (send s set x y (send this get x y))) s))
-                         
-  
+
   ; Integer Integer Tile -> Scene
   (define/public (set x y tile) (when (good-xy? x y) (vector-set! (vector-ref data y) x tile) this))
 
