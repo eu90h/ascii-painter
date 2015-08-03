@@ -46,7 +46,7 @@
     this)
 
   (define (pt-in-scene? p)
-    (and (unsafe-fx<= 0 (pt-x p)) (unsafe-fx<= 0 (pt-y p)) (unsafe-fx< (pt-x p) scene-width) (unsafe-fx< (pt-y p) scene-height)))
+    (and (unsafe-fx<= 0 (unsafe-struct-ref p 0)) (unsafe-fx<= 0 (unsafe-struct-ref p 1)) (unsafe-fx< (unsafe-struct-ref p 0) scene-width) (unsafe-fx< (unsafe-struct-ref p 1) scene-height)))
 
   (define/override (on-event mouse-event)
     (let ([p (send this clamp (send mouse-event get-x) (send mouse-event get-y))])
@@ -97,8 +97,6 @@
       (for* ([xi (in-range width)] [yi (in-range height)])
         (send this draw-tile (send scene get (unsafe-fx+ cx xi) (unsafe-fx+ cy yi)) xi yi)))
     (send container refresh))))
-
-  
 
 (define (color? c) (and (object? c) (is-a? c color%)))
 (define (canvas? c) (and (object? c) (is-a? c canvas%)))
