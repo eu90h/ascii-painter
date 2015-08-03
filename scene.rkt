@@ -6,12 +6,27 @@
 (define (scene? e) (and (object? e) (is-a? e scene%)))
 
 (provide (contract-out
-  [struct tile ([symbol char?] [fg color?] [bg color?] [descr string?])]) scene% empty-tile selection-tile serialize-scene deserialize-scene)
+  [struct tile ([symbol char?] [fg color?] [bg color?] [descr string?])]
+  [unsafe-tile-symbol (-> tile/c char?)]
+  [unsafe-tile-fg (-> tile/c color?)]
+  [unsafe-tile-bg (-> tile/c color?)]
+  [unsafe-tile-descr (-> tile/c string?)]) 
+  scene% 
+  empty-tile 
+  selection-tile 
+  serialize-scene 
+  deserialize-scene)
 
 (require racket/serialize racket/unsafe/ops)
 
 ; a tile is a Char, Color, Color, String
-(serializable-struct tile (symbol fg bg descr)) ; the atomic unit of which scenes are composed is the tile
+ ; the atomic unit of which scenes are composed is the tile
+ (serializable-struct tile (symbol fg bg descr))
+(define tile/c (struct/c tile char? color? color? string?))
+(define (unsafe-tile-symbol t) (unsafe-struct-ref t 0))
+(define (unsafe-tile-fg t) (unsafe-struct-ref t 1))
+(define (unsafe-tile-bg t) (unsafe-struct-ref t 2))
+(define (unsafe-tile-descr t) (unsafe-struct-ref t 3))
 
 (define empty-tile (tile #\# (make-object color% 0 0 0 1.0) (make-object color% 0 0 0 1.0) "empty"))
 (define selection-tile (tile #\X (make-object color% 255 255 0 1.0) (make-object color% 0 0 0 1.0) "Crosshair"))
