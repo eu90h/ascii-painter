@@ -143,9 +143,6 @@
 ; (Integer Integer -> Void) Pt Pt
 ; applies a callback to all points within two pts
 (define (trace-filled-rectangle callback p q)
- (when (unsafe-fx> (pt-mag p) (pt-mag q))
-   (trace-filled-rectangle callback q p))
-
  (define min-x (unsafe-fxmin (pt-x p) (pt-x q)))
  (define min-y (unsafe-fxmin (pt-y p) (pt-y q)))
 
