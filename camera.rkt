@@ -15,7 +15,8 @@
   ; returns true if the rectangle formed by the given point p and 
   ; the point p + (canvas-width, canvas-height) lies within a given scene
 	(define (valid-pos? p)
-    (and (>= (pt-x p) 0) (>= (pt-y p) 0) (< (pt-x p) scene-width) (< (pt-y p) scene-height)))
+    (and (>= (pt-x p) 0) (>= (pt-y p) 0) 
+      (< (+ canvas-width (pt-x p)) scene-width) (< (+ canvas-height (pt-y p)) scene-height)))
 
   ; Pt -> Pt
   ; Adds p to the current camera position if p + camera-position is a valid-pos?
@@ -26,8 +27,7 @@
 
   ; Integer Integer -> Void
   ; moves the camera by a given displacement
-	(define/public (move dx dy)
-		(set! pos (safe-add (pt dx dy))) pos)
+	(define/public (move dx dy) (set! pos (safe-add (pt dx dy))) pos)
 
   ; Integer Integer -> Void
   ; updates the scene boundaries
