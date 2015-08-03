@@ -10,7 +10,6 @@
     [colors list?] 
     [random-element (-> list? any/c)]
     [get-random-color (-> color?)]  
-  ;  [get-random-symbol (-> char?)]
     [random-integer (-> integer? integer? integer?)]
     [get-random-pt (-> integer? integer? integer? integer? pt/c)]
     [evt-clamp (-> canvas? event? (struct/c pt natural-number/c natural-number/c))]
@@ -51,13 +50,6 @@
 
 (module+ test
   (check-pred color? (get-random-color)))
-
-; Void -> Char
-; returns a random cp437 character
-;(define (random-symbol) ()
-
-;(module+ test
-;  (check-pred char? (get-random-symbol)))
 
 ; Integer Integer -> Integer
 ; returns a random integer between two integers (inclusive)
