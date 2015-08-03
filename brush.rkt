@@ -8,23 +8,6 @@
 (define brush-interface (interface () get-name set-scene set-tile set-canvas handle get-history set-history)) 
 (define brush-with-selection-interface (interface (brush-interface) get-selected-points))
 
-;(define (change-tile canvas history scene x y tile) 
-;  (let ([p (send canvas clamp x y)])
-;    (send canvas draw)
-;    (paint-scene history scene (pt-x p) (pt-y p) tile)))
-
-;(define (xy-in-scene? scene x y) 
- ; (and (number-in-interval? x (interval 0 (sub1 (send scene get-width))))
- ;   (number-in-interval? y (interval 0 (sub1 (send scene get-height))))))
-
-;(define (remove-tile canvas history scene x y)  
- ;   (change-tile canvas history scene x y empty-tile))
-
-;(define (paint-and-append canvas history scene x y tile action-data)
- ; (when (xy-in-scene? scene x y)
- ;   (values (append action-data (list (list (send scene get x y) x y))) 
-  ;          (change-tile canvas history scene x y tile))))
-
 (define single-brush% (class* object% (brush-with-selection-interface)
 	(init-field canvas scene)
 
