@@ -1,7 +1,7 @@
 #lang racket/gui
 
 (require racket/serialize ascii-canvas file/gzip file/gunzip 
-  "scene.rkt" "symbol.rkt" "brush.rkt" "point.rkt" "util.rkt" 
+  "scene.rkt" "brush.rkt" "point.rkt" "util.rkt" 
   "generator.rkt" "history.rkt" "interval.rkt" "camera.rkt"
   "main-canvas.rkt" "symbol-canvas.rkt")
 

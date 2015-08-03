@@ -10,7 +10,7 @@
     [colors list?] 
     [random-element (-> list? any/c)]
     [get-random-color (-> color?)]  
-    [get-random-symbol (-> char?)]
+  ;  [get-random-symbol (-> char?)]
     [random-integer (-> integer? integer? integer?)]
     [get-random-pt (-> integer? integer? integer? integer? pt/c)]
     [evt-clamp (-> canvas? event? (struct/c pt natural-number/c natural-number/c))]
@@ -24,7 +24,7 @@
     [paint-scene (-> list? scene? natural-number/c natural-number/c tile/c any)])
   random-wall-pt random-interior-pt)
 
-(require "symbol.rkt" "scene.rkt" "point.rkt" "history.rkt" "room.rkt")
+(require "scene.rkt" "point.rkt" "history.rkt" "room.rkt")
 
 (module+ test
   (require rackunit))
@@ -54,10 +54,10 @@
 
 ; Void -> Char
 ; returns a random cp437 character
-(define (get-random-symbol) (string->symbol (random-element cp437-strings)))
+;(define (random-symbol) ()
 
-(module+ test
-  (check-pred char? (get-random-symbol)))
+;(module+ test
+;  (check-pred char? (get-random-symbol)))
 
 ; Integer Integer -> Integer
 ; returns a random integer between two integers (inclusive)
