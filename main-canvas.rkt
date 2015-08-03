@@ -42,7 +42,7 @@
     this)
 
   (define (pt-in-scene? p)
-    (and (<= 0 (pt-x p)) (<= 0 (pt-y p)) (< (pt-x p) width) (< (pt-y p) height)))
+    (and (<= 0 (pt-x p)) (<= 0 (pt-y p)) (< (pt-x p) scene-width) (< (pt-y p) scene-height)))
 
   (define/override (on-event mouse-event)
     (let ([p (send this clamp (send mouse-event get-x) (send mouse-event get-y))])
