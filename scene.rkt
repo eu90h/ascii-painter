@@ -68,9 +68,6 @@
   
   (field (data (for/vector ([y height]) (for/vector ([x width]) tile)))) ; a 2d vector of tiles
 
-  ; these intervals represent the boundaries of the scene
-  ;(field [x-interval (interval 0 (sub1 width))] [y-interval (interval 0 (sub1 height))])
-
   (super-new)
   
   ; Void -> Vector
