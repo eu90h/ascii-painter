@@ -9,15 +9,33 @@ This tool would be good for creating static city/town levels for instance.
 
 Screenshots
 -----------
+A little example
+
 ![Example Map](https://i.imgur.com/U4cHvWG.png)
+
+A castle map
+
+![Beginnings of a Castle Map](https://i.imgur.com/6c4psVj.png)
+
+All the various shapes:
+
+![Shape Gallery](https://i.imgur.com/7CeFGMN.png)
+
+Picking a color:
+
+![Color Picker](https://i.imgur.com/yjOMfiE.png)
+
+Finally, no Lisp program is complete without Lambdas!
+
+![Lambda](https://i.imgur.com/DG5qYXV.png)
 
 Binaries
 --------
-[Mac](https://www.dropbox.com/s/b504p9e9sy7uq4j/ascii-painter-mac.zip?dl=0)
+[Windows](https://www.dropbox.com/s/d7yp4i9v6sm85kk/ascii-painter-win.zip?dl=0)
+[OSX](https://www.dropbox.com/s/b504p9e9sy7uq4j/ascii-painter-mac.zip?dl=0)
 
 Usage
 -----
-run 'racket main.rkt'.
 Ascii-painter requires @jpverkamp's ascii-canvas library.
 
 The default map is 100x60. To change the dimensions, click File->New Map.
