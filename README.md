@@ -31,8 +31,7 @@ Finally, no Lisp program is complete without Lambdas!
 
 Binaries
 --------
-[Windows](https://www.dropbox.com/s/d7yp4i9v6sm85kk/ascii-painter-win.zip?dl=0)
-[OSX](https://www.dropbox.com/s/b504p9e9sy7uq4j/ascii-painter-mac.zip?dl=0)
+coming soon
 
 Usage
 -----
