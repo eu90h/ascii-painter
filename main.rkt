@@ -1,6 +1,6 @@
 #lang racket/gui
-
-(require racket/serialize ascii-canvas file/gzip file/gunzip 
+(require contract-profile)
+(require racket/serialize ascii-canvas file/gzip file/gunzip racket/performance-hint
   "scene.rkt" "brush.rkt" "point.rkt" "util.rkt" 
   "generator.rkt" "history.rkt"  "camera.rkt"
   "main-canvas.rkt" "symbol-canvas.rkt")
@@ -29,12 +29,12 @@
   (send tile-fg-canvas redraw)
   (send tile-bg-canvas redraw))
 
-(define (get-tile-index l v)
+(begin-encourage-inline (define (get-tile-index l v)
     (define (iter l i) 
       (if (null? l) -1 
         (if (eq? (tile-descr (first l)) v) i 
           (iter (rest l) (add1 i)))))
-    (iter l 0))
+    (iter l 0)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -327,5 +327,4 @@
 
   (send canvas set-scales (/ (send canvas get-width) canvas-width) (/ (send canvas get-height) canvas-height))
   (send canvas scene-draw))
-
 (initialize)

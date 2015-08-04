@@ -1,5 +1,5 @@
 #lang racket/gui
-
+(require racket/unsafe/ops)
 (define (color? c) (and (object? c) (is-a? c color%)))
 (define (canvas? c) (and (object? c) (is-a? c canvas%)))
 (define (event? e) (and (object? e) (is-a? e event%)))
@@ -71,6 +71,18 @@
 (define (evt-clamp canvas evt)
 	(send canvas clamp (send evt get-x) (send evt get-y)))
 
+; (Integer Integer -> Void) Integer Integer Integer -> Void
+; applies a callback to every point on a vertical line
+(define (trace-column callback x y0 y1)
+  (for ([y (in-range (min y0 y1) (add1 (max y0 y1)))])
+    (callback x y)))
+
+; (Integer Integer -> Void) Integer Integer Integer -> Void
+; applies a callback to every point on a horizontal line
+(define (trace-row callback y x0 x1)
+  (for ([x (in-range (min x0 x1) (add1 (max x0 x1)))])
+    (callback x y)))
+
 ; (Integer Integer -> Void) Pt Pt -> Void 
 ; an implementation of Bresenham's line algorithm
 (define (trace-line callback p q)
@@ -100,18 +112,6 @@
     [(zero? dx) (trace-column apply-callback (pt-x p) (pt-y p) (pt-y q))]
     [(zero? dy) (trace-row apply-callback (pt-y p) (pt-x p) (pt-x q))]
     [else (trace)]))
-
-; (Integer Integer -> Void) Integer Integer Integer -> Void
-; applies a callback to every point on a vertical line
-(define (trace-column callback x y0 y1)
-	(for ([y (in-range (min y0 y1) (add1 (max y0 y1)))])
-    (callback x y)))
-
-; (Integer Integer -> Void) Integer Integer Integer -> Void
-; applies a callback to every point on a horizontal line
-(define (trace-row callback y x0 x1)
-	(for ([x (in-range (min x0 x1) (add1 (max x0 x1)))])
-    (callback x y)))
 
 ; (Integer Integer -> Void) Pt Integer -> Void
 ; applies a callback to integer points on a circle of given radius 
@@ -143,14 +143,11 @@
 ; (Integer Integer -> Void) Pt Pt
 ; applies a callback to all points within two pts
 (define (trace-filled-rectangle callback p q)
- (when (> (pt-mag p) (pt-mag q))
-   (trace-filled-rectangle callback q p))
+ (define min-x (unsafe-fxmin (pt-x p) (pt-x q)))
+ (define min-y (unsafe-fxmin (pt-y p) (pt-y q)))
 
- (define min-x (min (pt-x p) (pt-x q)))
- (define min-y (min (pt-y p) (pt-y q)))
-
- (define max-x (add1 (max (pt-x p) (pt-x q))))
- (define max-y (add1 (max (pt-y p) (pt-y q))))
+ (define max-x (unsafe-fx+ 1 (unsafe-fxmax (pt-x p) (pt-x q))))
+ (define max-y (unsafe-fx+ 1 (unsafe-fxmax (pt-y p) (pt-y q))))
 
  (for* ([x (in-range min-x max-x)]
         [y (in-range min-y max-y)])

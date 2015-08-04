@@ -2,7 +2,9 @@
 
 (provide main-canvas%)
 
-(require ascii-canvas "scene.rkt" "point.rkt" "util.rkt" "camera.rkt" "history.rkt" "brush.rkt")
+(require ascii-canvas racket/unsafe/ops "scene.rkt" "point.rkt" "util.rkt" "camera.rkt" "history.rkt" "brush.rkt")
+
+(define unsafe-fxfloor (compose unsafe-fl->fx unsafe-flfloor unsafe-fx->fl))
 
 (define main-canvas% (class ascii-canvas%
   (init-field container width height scene camera cur-tile history)
@@ -26,15 +28,19 @@
   (define/public (set-scales x y) (set! x-scale x) (set! y-scale y))
   (define/public (set-scene-dimensions w h) (set! scene-width w) (set! scene-height h))
 
+
   (define/public (clamp mx my)
-    (pt-add (pt (floor (/ mx x-scale)) (floor (/ my y-scale))) camera-pos))
+    (pt (unsafe-fx+ (unsafe-pt-x camera-pos) 
+                    (unsafe-fxfloor (unsafe-fxquotient mx x-scale)))
+        (unsafe-fx+ (unsafe-pt-y camera-pos)
+                    (unsafe-fxfloor (unsafe-fxquotient my y-scale)))))
 
   (define/override (on-char key-event)
     (case (send key-event get-key-code)
       [(menu release) (void)]
       [(escape) (let ([f (new dialog% [label "Quit?"])]) 
         (if (eq? 'yes (message-box "Exit" "Are you sure you want to exit?" f '(yes-no))) (exit) (void)) (send f show #f))]
-      [(#\z)  (set! history (undo-last-action history scene)) (send this scene-draw)]
+      [(#\z) (when (send key-event get-control-down) (set! history (undo-last-action history scene)) (send this scene-draw))]
       [(up #\w) (send camera move 0 -1) (set! camera-pos (send camera get-position)) (send this scene-draw)]
       [(left #\a) (send camera move -1 0) (set! camera-pos (send camera get-position)) (send this scene-draw)]
       [(down #\s) (send camera move 0 1) (set! camera-pos (send camera get-position)) (send this scene-draw)]
@@ -42,16 +48,18 @@
     this)
 
   (define (pt-in-scene? p)
-    (and (<= 0 (pt-x p)) (<= 0 (pt-y p)) (< (pt-x p) scene-width) (< (pt-y p) scene-height)))
+    (and (unsafe-fx<= 0 (unsafe-pt-x p)) (unsafe-fx<= 0 (unsafe-pt-y p)) 
+      (unsafe-fx< (unsafe-pt-x p) scene-width) (unsafe-fx< (unsafe-pt-y p) scene-height)))
 
   (define/override (on-event mouse-event)
     (let ([p (send this clamp (send mouse-event get-x) (send mouse-event get-y))])
       (when (pt-in-scene? p)
         (let ([q (pt-sub p camera-pos)]) 
-          (draw-tile (send scene get (+ (pt-x camera-pos) (pt-x last-mouse-pt)) (+ (pt-y camera-pos) (pt-y last-mouse-pt)))
-            (pt-x last-mouse-pt) (pt-y last-mouse-pt))
-          (draw-tile cur-tile (pt-x q) (pt-y q))
-          (unless (null? last-selected-points)
+          (draw-tile (send scene get (unsafe-fx+ (unsafe-pt-x camera-pos) (unsafe-pt-x last-mouse-pt)) 
+                                    (unsafe-fx+ (unsafe-pt-y camera-pos) (unsafe-pt-y last-mouse-pt)))
+                    (unsafe-pt-x last-mouse-pt) (unsafe-pt-y last-mouse-pt))
+          (draw-tile cur-tile (unsafe-pt-x q) (unsafe-pt-y q))
+          (unless (null? last-selected-points) 
             (unselect-tiles last-selected-points))
           (set! last-mouse-pt q))
       (send cur-brush handle mouse-event)
@@ -60,38 +68,38 @@
 
   (define/public (get-width-in-chars) width)
 
-  (define/public (scene-draw)
-    (let ([cx (pt-x camera-pos)] [cy (pt-y camera-pos)])
-      (for* ([xi (in-range width)] [yi (in-range height)])
-        (send this draw-tile (send scene get (+ cx xi) (+ cy yi)) xi yi)))
-    (send container refresh))
-
   (define (coords-in-canvas? x y)
-    (and (>= y 0) (>= x 0) (< x width) (< y height)))
+    (and (unsafe-fx>= y 0) (unsafe-fx>= x 0) (unsafe-fx< x width) (unsafe-fx< y height)))
 
   (define/public (draw-tile tile x y)
     (when (coords-in-canvas? x y)
-      (send this write (tile-symbol tile) x y (tile-fg tile) (tile-bg tile))))
+      (send this write (unsafe-tile-symbol tile) x y (unsafe-tile-fg tile) (unsafe-tile-bg tile))))
 
   (define (unselect-tiles points)
     (set! last-selected-points null)
-    (let ([cx (pt-x camera-pos)] [cy (pt-y camera-pos)] [num-pts (length points)] 
-          [sym (tile-symbol selection-tile)] [fg (tile-fg selection-tile)] [bg (tile-bg selection-tile)])
+    (let ([cx (unsafe-pt-x camera-pos)] [cy (unsafe-pt-y camera-pos)] [num-pts (length points)] 
+          [sym (unsafe-tile-symbol selection-tile)] [fg (unsafe-tile-fg selection-tile)] [bg (unsafe-tile-bg selection-tile)])
       (let loop ([ps points])
         (unless (null? ps)
-          (let* ([qx (- (pt-x (first ps)) cx)] [qy (- (pt-y (first ps)) cy)] [t (send scene get qx qy)])
-            (when (coords-in-canvas? qx qy) (send this write (tile-symbol t) qx qy (tile-fg t) (tile-bg t))))
+          (let* ([qx (unsafe-fx- (unsafe-pt-x (first ps)) cx)] [qy (unsafe-fx- (unsafe-pt-y (first ps)) cy)] [t (send scene get qx qy)])
+            (when (coords-in-canvas? qx qy) (send this write (unsafe-tile-symbol t) qx qy (unsafe-tile-fg t) (unsafe-tile-bg t))))
           (loop (rest ps))))))
 
   (define/public (draw-selected-tiles points)
     (set! last-selected-points points)
-    (let ([cx (pt-x camera-pos)] [cy (pt-y camera-pos)] [num-pts (length points)] 
+    (let ([cx (unsafe-pt-x camera-pos)] [cy (unsafe-pt-y camera-pos)] [num-pts (length points)]
           [sym (tile-symbol selection-tile)] [fg (tile-fg selection-tile)] [bg (tile-bg selection-tile)])
       (let loop ([ps points])
         (unless (null? ps)
-          (let ([qx (- (pt-x (first ps)) cx)] [qy (- (pt-y (first ps)) cy)])
+          (let ([qx (unsafe-fx- (unsafe-pt-x (first ps)) cx)] [qy (unsafe-fx- (unsafe-pt-y (first ps)) cy)])
             (when (coords-in-canvas? qx qy) (send this write sym qx qy fg bg)))
-          (loop (rest ps))))))))
+          (loop (rest ps))))))
+
+  (define/public (scene-draw)
+    (let ([cx (unsafe-pt-x camera-pos)] [cy (unsafe-pt-y camera-pos)])
+      (for* ([xi (in-range width)] [yi (in-range height)])
+        (send this draw-tile (send scene get (unsafe-fx+ cx xi) (unsafe-fx+ cy yi)) xi yi)))
+    (send container refresh))))
 
 (define (color? c) (and (object? c) (is-a? c color%)))
 (define (canvas? c) (and (object? c) (is-a? c canvas%)))
