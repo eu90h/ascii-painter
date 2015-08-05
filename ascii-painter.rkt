@@ -122,7 +122,6 @@
   (define path (get-file))
   (define in (open-input-file path #:mode 'binary))
   (define dimensions (map string->number (string-split (read-line in) ",")))
-  (displayln dimensions)
   (define new-scene (make-object scene% (first dimensions) (second dimensions) empty-tile))
   (for* ([x (in-range 0 (first dimensions))] [y (in-range 0 (second dimensions))])
     (define t (uncerialize-line (read-line in)))
