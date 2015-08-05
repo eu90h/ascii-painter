@@ -12,7 +12,8 @@
          "history.rkt"
          "camera.rkt"
          "main-canvas.rkt"
-         "symbol-canvas.rkt")
+         "symbol-canvas.rkt"
+         "cerialize.rkt")
 
 (define history null)
 (define rooms null)
@@ -103,10 +104,15 @@
     (send frame set-label 
           (string-append "Ascii-Painter - " 
                          (last (string-split (path->string path) "/")) " (" (number->string w) "x" (number->string h) ")"))
-    (define out (open-output-file tmp #:mode 'binary #:exists 'replace))
-    (write (serialize-scene (send scene copy)) out)
-    (close-output-port out)
-    (gzip (path->string tmp) (path->string path))))
+    (define out (open-output-file path #:exists 'replace))
+    (cerialize-number w out) 
+    (display "," out)
+    (cerialize-number h out)
+    (newline out)
+    (for* ([x (in-range 0 w)] [y (in-range 0 h)])
+      (cerialize-struct (send scene get x y) 4 out))
+
+    (close-output-port out)))
 
 (define save-menu (new menu-item% (label "Save") (parent file-menu) (callback save-callback)))
 
@@ -115,15 +121,18 @@
 (define (load-callback menu evt)
   (define path (get-file))
   (define in (open-input-file path #:mode 'binary))
-  (define out (open-output-string))
-  (gunzip-through-ports in out)
-  (close-input-port in)
+  (define dimensions (map string->number (string-split (read-line in) ",")))
+  (displayln dimensions)
+  (define new-scene (make-object scene% (first dimensions) (second dimensions) empty-tile))
+  (for* ([x (in-range 0 (first dimensions))] [y (in-range 0 (second dimensions))])
+    (define t (uncerialize-line (read-line in)))
+    (send new-scene set x y t))
   
   (change-scene 
-   (deserialize-scene (read (open-input-string (get-output-string out)))) 
+   new-scene
    (last (string-split (path->string path) "/")))
   
-  (close-output-port out))
+  (close-input-port in))
 
 (define load-menu (new menu-item% (label "Load") (parent file-menu) (callback load-callback)))
 
