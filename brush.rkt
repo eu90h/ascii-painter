@@ -85,12 +85,12 @@
                            [(right-down) (set! drawing #f) (set! removing #t)]
                            [(right-up) (set! removing #f)]))))
 
-(define shape-brush% (class* object% (brush-with-selection-interface)
+(define shape-brush% (class* object% (brush-interface)
                        (init-field canvas scene)
 
                        (field [tile empty-tile]
                               [history null]
-                              (selected-points null)
+                              ;(selected-points null)
                               [placing #f]
                               [initial-pt (pt 0 0)]
                               [tiles-drawn null]
@@ -107,9 +107,8 @@
                        (begin-encourage-inline  (define (good-xy? x y)
                                                   (and (unsafe-fx>= y 0) (unsafe-fx>= x 0) (unsafe-fx< x width) (unsafe-fx< y height))))
                        
-                       (define (select-tile x y)
-                         (send canvas select x y))
-                        ; (set! selected-points (append selected-points (list (pt x y)))))
+                       (begin-encourage-inline (define (select-tile x y)
+                         (send canvas select x y)))
                        
                        (define (set-and-accumulate x y)
                          (when (good-xy? x y)
@@ -123,13 +122,13 @@
                        (define (build-tracer-args mouse-event)
                          (case shape
                            [("line") (list set-and-accumulate initial-pt (evt-clamp canvas mouse-event))]
-                           [("filled-rectangle") (list scene tile initial-pt (evt-clamp canvas mouse-event))]
+                           [("filled-rectangle") (list set-and-accumulate initial-pt (evt-clamp canvas mouse-event))]
                            [("circle" "weird-circle" "weird-rectangle" "weird-star" "diamond") (list set-and-accumulate (evt-clamp canvas mouse-event) radius)]))
 
                        (define (build-selector-args mouse-event)
                          (case shape
                            [("line") (list select-tile initial-pt (evt-clamp canvas mouse-event))]
-                           [("filled-rectangle") (list canvas initial-pt (evt-clamp canvas mouse-event))]
+                           [("filled-rectangle") (list select-tile initial-pt (evt-clamp canvas mouse-event))]
                            [("circle" "weird-circle" "weird-rectangle" "weird-star" "diamond") (list select-tile (evt-clamp canvas mouse-event) radius)]))
                        
                        (define (handle-left-up mouse-event)
@@ -145,32 +144,38 @@
                          (send canvas scene-draw))
                        
                        (define (handle-select mouse-event)
-                         (when (and placing
-                                    (not (equal? (pt (send mouse-event get-x) (send mouse-event get-y))
-                                                 last-mouse-pt)))
-                           (send canvas unselect-all)
-                           (apply (find-selector shape) (build-selector-args mouse-event))
-                           (set! last-mouse-pt (pt (send mouse-event get-x) (send mouse-event get-y)))))
+                         (if (false? (member shape (list "line" "filled-rectangle")))
+                             (begin (send canvas unselect-all)
+                                    (apply (find-selector shape) (build-selector-args mouse-event)))
+                             (when (and placing
+                                        (not (equal? (pt (send mouse-event get-x) (send mouse-event get-y))
+                                                     last-mouse-pt)))
+                               (send canvas unselect-all)
+                               (apply (find-selector shape) (build-selector-args mouse-event))
+                               (set! last-mouse-pt (pt (send mouse-event get-x) (send mouse-event get-y))))))
+                        
                           
          
                        (define (find-tracer s)
                          (case s
                            [("line") trace-line]
                            [("circle") trace-circle]
-                           [("filled-rectangle") draw-filled-rectangle]
+                           [("filled-rectangle") trace-filled-rectangle]
                            [("weird-circle") trace-weird-circle]
                            [("weird-rectangle") trace-weird-rectangle]
                            [("weird-star") trace-weird-star]
                            [("diamond") trace-diamond]))
+                       
                        (define (find-selector s)
                          (case s
                            [("line") trace-line]
                            [("circle") trace-circle]
-                           [("filled-rectangle") select-rectangle]
+                           [("filled-rectangle") trace-unfilled-rectangle]
                            [("weird-circle") trace-weird-circle]
                            [("weird-rectangle") trace-weird-rectangle]
                            [("weird-star") trace-weird-star]
                            [("diamond") trace-diamond]))
+                       
                        (define/public (set-shape s) (set! shape s) (set! tracer (find-tracer s)))
                        (define/public (get-shape) shape)
                        (define/public (get-shapes) shapes)
@@ -180,11 +185,11 @@
                        (define/public (get-name) "Shape")
                        (define/public (set-scene c) (set! scene c))
                        (define/public (set-canvas c) (set! canvas c))
-                       (define/public (get-selected-points) selected-points)
+                     ;  (define/public (get-selected-points) selected-points)
                        (define/public (set-radius n) (set! radius n))
                        
                        (define/public (handle mouse-event)
-                         (set! selected-points null)
+                      ;   (set! selected-points null)
                          (case (send mouse-event get-event-type)
                            [(left-down) (handle-left-down mouse-event)]
                            [(left-up) (handle-left-up mouse-event)]

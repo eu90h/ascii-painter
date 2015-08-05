@@ -6,23 +6,25 @@
 (define (scene? e) (and (object? e) (is-a? e scene%)))
 (define tile/c (struct/c tile char? color? color? string?))
 (define pt/c (struct/c pt integer? integer?))
-(provide select-rectangle draw-filled-rectangle evt-clamp  paint-scene
-         (contract-out 
-          [colors list?] 
-          [random-element (-> list? any/c)]
-          [random-color (-> color?)]  
-          [random-integer (-> integer? integer? integer?)]
-          [random-pt (-> integer? integer? integer? integer? pt/c)]
-          ; [evt-clamp (-> canvas? event? (struct/c pt natural-number/c natural-number/c))]
-          [trace-line (-> (-> natural-number/c natural-number/c any) pt/c pt/c any)]
-          [trace-filled-rectangle (-> (-> integer? integer? any) pt/c pt/c any)]
-          [trace-circle (-> (-> integer? integer? any) pt/c natural-number/c any)]
-          [trace-weird-circle (-> (-> integer? integer? any) pt/c natural-number/c any)] 
-          [trace-weird-star (-> (-> integer? integer? any) pt/c natural-number/c any)]
-          [trace-weird-rectangle (-> (-> integer? integer? any) pt/c natural-number/c any)]
-          [trace-diamond (-> (-> integer? integer? any) pt/c natural-number/c any)])
-         ;[paint-scene (-> list? scene? natural-number/c natural-number/c tile/c any)])
-         random-wall-pt random-interior-pt)
+
+(provide
+ (contract-out 
+  [colors list?] 
+  [random-element (-> list? any/c)]
+  [random-color (-> color?)]  
+  [random-integer (-> integer? integer? integer?)]
+  [random-pt (-> integer? integer? integer? integer? pt/c)]
+  [evt-clamp (-> canvas? event? (struct/c pt natural-number/c natural-number/c))]
+  [trace-line (-> (-> natural-number/c natural-number/c any) pt/c pt/c any)]
+  [trace-filled-rectangle (-> (-> integer? integer? any) pt/c pt/c any)]
+  [trace-unfilled-rectangle (-> (-> integer? integer? any) pt/c pt/c any)]
+  [trace-circle (-> (-> integer? integer? any) pt/c natural-number/c any)]
+  [trace-weird-circle (-> (-> integer? integer? any) pt/c natural-number/c any)] 
+  [trace-weird-star (-> (-> integer? integer? any) pt/c natural-number/c any)]
+  [trace-weird-rectangle (-> (-> integer? integer? any) pt/c natural-number/c any)]
+  [trace-diamond (-> (-> integer? integer? any) pt/c natural-number/c any)]
+  [paint-scene (-> list? scene? natural-number/c natural-number/c tile/c any)])
+ random-wall-pt random-interior-pt)
 
 (require "scene.rkt" "point.rkt" "history.rkt" "room.rkt")
 
@@ -84,40 +86,20 @@
   (for ([x (in-range (min x0 x1) (add1 (max x0 x1)))])
     (callback x y)))
 
-; main-canvas% Integer Integer Integer -> Void
-; calls main-canvas% method select for every point on a vertical line
-(define (select-column canvas x y0 y1)
-  (for ([y (in-range (min y0 y1) (add1 (max y0 y1)))])
-    (send canvas select x y)))
-
-; main-canvas% Integer Integer Integer -> Void
-; calls main-canvas% method select for every point on a horizontal line
-(define (select-row canvas y x0 x1)
-  (for ([x (in-range (min x0 x1) (add1 (max x0 x1)))])
-    (send canvas select x y)))
-
-(define (draw-filled-rectangle scene tile p q)
+; (Integer Integer -> Void) Pt Pt -> Void
+; traces the outline of a rectangle
+(define (trace-unfilled-rectangle callback p q)
   (define min-x (unsafe-fxmin (unsafe-pt-x p) (unsafe-pt-x q)))
   (define min-y (unsafe-fxmin (unsafe-pt-y p) (unsafe-pt-y q)))
   
-  (define max-x (sub1 (unsafe-fx+ 1 (unsafe-fxmax (unsafe-pt-x p) (unsafe-pt-x q)))))
-  (define max-y (sub1 (unsafe-fx+ 1 (unsafe-fxmax (unsafe-pt-y p) (unsafe-pt-y q)))))
+  (define max-x (unsafe-fx+ 1 (unsafe-fxmax (unsafe-pt-x p) (unsafe-pt-x q))))
+  (define max-y (unsafe-fx+ 1 (unsafe-fxmax (unsafe-pt-y p) (unsafe-pt-y q))))
   
-  (for* ([x (in-range min-x max-x)]
-         [y (in-range min-y max-y)])
-    ;(set! tiles-drawn (append tiles-drawn (list (list (send scene get x y) x y))))
-    (send scene set x y tile)))
-
-(define (select-rectangle canvas p q)
-  (define min-x (unsafe-fxmin (unsafe-pt-x p) (unsafe-pt-x q)))
-  (define min-y (unsafe-fxmin (unsafe-pt-y p) (unsafe-pt-y q)))
+  (trace-column callback min-x min-y max-y)
+  (trace-column callback max-x min-y max-y)
   
-  (define max-x (sub1 (unsafe-fx+ 1 (unsafe-fxmax (unsafe-pt-x p) (unsafe-pt-x q)))))
-  (define max-y (sub1 (unsafe-fx+ 1 (unsafe-fxmax (unsafe-pt-y p) (unsafe-pt-y q)))))
-  (select-column canvas min-x min-y max-y)
-  (select-column canvas max-x min-y max-y)
-  (select-row canvas min-y min-x max-x)
-  (select-row canvas max-y min-x max-x))
+  (trace-row callback min-y min-x max-x)
+  (trace-row callback max-y min-x max-x))
 
 ; (Integer Integer -> Void) Pt Pt -> Void 
 ; an implementation of Bresenham's line algorithm
@@ -153,15 +135,16 @@
 ; applies a callback to integer points on a circle of given radius 
 ; (adapted from C code on the Wikipedia article for the Midpoint circle algorithm)
 (define (trace-circle callback p radius)
+  (define center-x (unsafe-pt-x p))
+  (define center-y (unsafe-pt-y p))
   (define the-pts null)
   (define (apply-callback x y) 
     (when (eq? #f (member (list x y) the-pts))
       (callback x y)
-      (set! the-pts (unsafe-cons-list the-pts (list (list x y))))))
-  (define center-x (unsafe-pt-x p))
-  (define center-y (unsafe-pt-y p))
+      (set! the-pts (append the-pts (list (list x y))))))
   (define (loop x y decisionOver2)
     (when (unsafe-fx>= x y)
+      
       (apply-callback (unsafe-fx+ x center-x) (unsafe-fx+ y center-y))
       (apply-callback (unsafe-fx+ y center-x) (unsafe-fx+ x center-y))
       (apply-callback (unsafe-fx- center-x x) (unsafe-fx+ y center-y))
@@ -173,7 +156,7 @@
       (apply-callback (unsafe-fx- center-x y) (unsafe-fx- center-y x))
       (if (unsafe-fx<= decisionOver2 0)
           (loop x (unsafe-fx+ y 1) (unsafe-fx+ 1 (unsafe-fx+ decisionOver2 (unsafe-fx* 2 (unsafe-fx+ 1 y)))))
-          (loop (unsafe-fx- x 1) (unsafe-fx+ 1 y) (unsafe-fx+ 1 (unsafe-fx+ decisionOver2 (unsafe-fx* 2 (- (unsafe-fx+ 1 y) (unsafe-fx+ 1 x)))))))))
+          (loop (unsafe-fx- x 1) (unsafe-fx+ 1 y) (unsafe-fx+ 1 (unsafe-fx+ decisionOver2 (unsafe-fx* 2 (unsafe-fx- (unsafe-fx+ 1 y) (unsafe-fx+ 1 x)))))))))
   (loop radius 0 (unsafe-fx- 1 radius)))
 
 ; (Integer Integer -> Void) Pt Pt
