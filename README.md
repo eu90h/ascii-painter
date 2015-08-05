@@ -6,33 +6,53 @@ In ascii-painter, you can use random map generators to fill out most of the map,
 place tiles in the exact area you need them.
 
 This tool would be good for creating static city/town levels for instance.
+
 Screenshots
 -----------
-["Blood River" (located in the examples folder)](https://imgur.com/U4cHvWG)
+A little example
+
+![Example Map](https://i.imgur.com/U4cHvWG.png)
+
+A castle map
+
+![Beginnings of a Castle Map](https://i.imgur.com/6c4psVj.png)
+
+All the various shapes:
+
+![Shape Gallery](https://i.imgur.com/7CeFGMN.png)
+
+Picking a color:
+
+![Color Picker](https://i.imgur.com/yjOMfiE.png)
+
+Finally, no Lisp program is complete without Lambdas!
+
+![Lambda](https://i.imgur.com/DG5qYXV.png)
+
+Binaries
+--------
+coming soon
 
 Usage
 -----
-run 'racket main.rkt'.
-Ascii-painter requires jpverkamp's ascii-canvas library.
+Ascii-painter requires @jpverkamp's ascii-canvas library.
 
-The camera is controlled with the arrow keys. The default map is 70x30. To change the dimensions, click File->New Map.
-
-To undo, press z.
+The default map is 100x60. To change the dimensions, click File->New Map.
+The camera is controlled with the arrow keys.
 
 Features
 --------
 * Brushes (Paintbrush, single painter, shape brush)
-* Generators (Fill map, Random Placement, Random Rectangle)
+* Generators (Fill map, Random Placement)
 * Full color support
 * All glyphs in code-page 437 supported
 * Saving and loading of maps
-* Undo
+* Undo (press ctrl-z)
 
 Upcoming Features
 -----------------
-* Saving and loading maps using the rexpaint .xp format
 * More random map generators
 
 Credits
 -------
-* Thanks to jpverkamp for ascii-canvas
+* Thanks to @jpverkamp for ascii-canvas
