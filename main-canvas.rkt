@@ -2,104 +2,126 @@
 
 (provide main-canvas%)
 
-(require ascii-canvas racket/unsafe/ops "scene.rkt" "point.rkt" "util.rkt" "camera.rkt" "history.rkt" "brush.rkt")
-
+(require "ascii-canvas.rkt" racket/unsafe/ops "scene.rkt" "point.rkt" "util.rkt" "camera.rkt" "history.rkt" "brush.rkt")
+(require profile)
 (define unsafe-fxfloor (compose unsafe-fl->fx unsafe-flfloor unsafe-fx->fl))
 
+      
+
 (define main-canvas% (class ascii-canvas%
-  (init-field container width height scene camera cur-tile history)
-  (super-new [parent container] [width-in-characters width] [height-in-characters height])
+                       (init-field
+                        container
+                        width
+                        height
+                        scene
+                        camera
+                        cur-tile
+                        history)
+                       
+                       (super-new [parent container]
+                                  [width-in-characters width]
+                                  [height-in-characters height])
+                       
+                       (field [cur-brush null])
+                       (field [scene-width (send scene get-width)])
+                       (field [scene-height (send scene get-height)])
+                       (field [x-scale (/ (send this get-width) width)])
+                       (field [y-scale (/ (send this get-height) height)])
+                       (field [last-mouse-pt (pt 0 0)])
+                       (field [last-selected-points null])
+                       (field [camera-pos (send camera get-position)])
+                       
 
-  (field [cur-brush null])
-  (field [scene-width (send scene get-width)])
-  (field [scene-height (send scene get-height)])
-  (field [x-scale (/ (send this get-width) width)])
-  (field [y-scale (/ (send this get-height) height)])
-  (field [last-mouse-pt (pt 0 0)])
-  (field [last-selected-points null])
-  (field [camera-pos (send camera get-position)])
-
-  (define/public (set-history h) (set! history h))
-  (define/public (get-history) history)
-  (define/public (set-cur-tile t) (set! cur-tile t))
-  (define/public (set-scene s) (set! scene s))
-  (define/public (set-camera c) (when (is-a? c camera%) (set! camera c)))
-  (define/public (set-brush b) (set! cur-brush b))
-  (define/public (set-scales x y) (set! x-scale x) (set! y-scale y))
-  (define/public (set-scene-dimensions w h) (set! scene-width w) (set! scene-height h))
+                       (define/public (set-history h) (set! history h))
+                       (define/public (get-history) history)
+                       (define/public (set-cur-tile t) (set! cur-tile t))
+                       (define/public (set-scene s) (set! scene s))
+                       (define/public (set-camera c) (when (is-a? c camera%) (set! camera c)))
+                       (define/public (set-brush b) (set! cur-brush b))
+                       (define/public (set-scales x y) (set! x-scale x) (set! y-scale y))
+                       (define/public (set-scene-dimensions w h) (set! scene-width w) (set! scene-height h))
 
 
-  (define/public (clamp mx my)
-    (pt (unsafe-fx+ (unsafe-pt-x camera-pos) 
-                    (unsafe-fxfloor (unsafe-fxquotient mx x-scale)))
-        (unsafe-fx+ (unsafe-pt-y camera-pos)
-                    (unsafe-fxfloor (unsafe-fxquotient my y-scale)))))
+                       (define/public (clamp mx my)
+                         (pt (unsafe-fx+ (unsafe-pt-x camera-pos) 
+                                         (unsafe-fxfloor (unsafe-fxquotient mx x-scale)))
+                             (unsafe-fx+ (unsafe-pt-y camera-pos)
+                                         (unsafe-fxfloor (unsafe-fxquotient my y-scale)))))
 
-  (define/override (on-char key-event)
-    (case (send key-event get-key-code)
-      [(menu release) (void)]
-      [(escape) (let ([f (new dialog% [label "Quit?"])]) 
-        (if (eq? 'yes (message-box "Exit" "Are you sure you want to exit?" f '(yes-no))) (exit) (void)) (send f show #f))]
-      [(#\z) (when (send key-event get-control-down) (set! history (undo-last-action history scene)) (send this scene-draw))]
-      [(up #\w) (send camera move 0 -1) (set! camera-pos (send camera get-position)) (send this scene-draw)]
-      [(left #\a) (send camera move -1 0) (set! camera-pos (send camera get-position)) (send this scene-draw)]
-      [(down #\s) (send camera move 0 1) (set! camera-pos (send camera get-position)) (send this scene-draw)]
-      [(right #\d) (send camera move 1 0)(set! camera-pos (send camera get-position)) (send this scene-draw)])
-    this)
-
-  (define (pt-in-scene? p)
-    (and (unsafe-fx<= 0 (unsafe-pt-x p)) (unsafe-fx<= 0 (unsafe-pt-y p)) 
-      (unsafe-fx< (unsafe-pt-x p) scene-width) (unsafe-fx< (unsafe-pt-y p) scene-height)))
-
-  (define/override (on-event mouse-event)
-    (let ([p (send this clamp (send mouse-event get-x) (send mouse-event get-y))])
-      (when (pt-in-scene? p)
-        (let ([q (pt-sub p camera-pos)]) 
-          (draw-tile (send scene get (unsafe-fx+ (unsafe-pt-x camera-pos) (unsafe-pt-x last-mouse-pt)) 
-                                    (unsafe-fx+ (unsafe-pt-y camera-pos) (unsafe-pt-y last-mouse-pt)))
-                    (unsafe-pt-x last-mouse-pt) (unsafe-pt-y last-mouse-pt))
-          (draw-tile cur-tile (unsafe-pt-x q) (unsafe-pt-y q))
-          (unless (null? last-selected-points) 
-            (unselect-tiles last-selected-points))
-          (set! last-mouse-pt q))
-      (send cur-brush handle mouse-event)
-      (set! history (history-add-actions history (send cur-brush get-history)))))
-      (send container refresh))
-
-  (define/public (get-width-in-chars) width)
-
-  (define (coords-in-canvas? x y)
-    (and (unsafe-fx>= y 0) (unsafe-fx>= x 0) (unsafe-fx< x width) (unsafe-fx< y height)))
-
-  (define/public (draw-tile tile x y)
-    (when (coords-in-canvas? x y)
-      (send this write (unsafe-tile-symbol tile) x y (unsafe-tile-fg tile) (unsafe-tile-bg tile))))
-
-  (define (unselect-tiles points)
-    (set! last-selected-points null)
-    (let ([cx (unsafe-pt-x camera-pos)] [cy (unsafe-pt-y camera-pos)] [num-pts (length points)] 
-          [sym (unsafe-tile-symbol selection-tile)] [fg (unsafe-tile-fg selection-tile)] [bg (unsafe-tile-bg selection-tile)])
-      (let loop ([ps points])
-        (unless (null? ps)
-          (let* ([qx (unsafe-fx- (unsafe-pt-x (first ps)) cx)] [qy (unsafe-fx- (unsafe-pt-y (first ps)) cy)] [t (send scene get qx qy)])
-            (when (coords-in-canvas? qx qy) (send this write (unsafe-tile-symbol t) qx qy (unsafe-tile-fg t) (unsafe-tile-bg t))))
-          (loop (rest ps))))))
-
-  (define/public (draw-selected-tiles points)
-    (set! last-selected-points points)
-    (let ([cx (unsafe-pt-x camera-pos)] [cy (unsafe-pt-y camera-pos)] [num-pts (length points)]
-          [sym (tile-symbol selection-tile)] [fg (tile-fg selection-tile)] [bg (tile-bg selection-tile)])
-      (let loop ([ps points])
-        (unless (null? ps)
-          (let ([qx (unsafe-fx- (unsafe-pt-x (first ps)) cx)] [qy (unsafe-fx- (unsafe-pt-y (first ps)) cy)])
-            (when (coords-in-canvas? qx qy) (send this write sym qx qy fg bg)))
-          (loop (rest ps))))))
-
-  (define/public (scene-draw)
-    (let ([cx (unsafe-pt-x camera-pos)] [cy (unsafe-pt-y camera-pos)])
-      (for* ([xi (in-range width)] [yi (in-range height)])
-        (send this draw-tile (send scene get (unsafe-fx+ cx xi) (unsafe-fx+ cy yi)) xi yi)))
-    (send container refresh))))
+                       (define/override (on-char key-event)
+                         (case (send key-event get-key-code)
+                           [(menu release) (void)]
+                           [(escape) (let ([f (new dialog% [label "Quit?"])]) 
+                                       (if (eq? 'yes (message-box "Exit" "Are you sure you want to exit?" f '(yes-no))) (exit) (void)) (send f show #f))]
+                           [(#\z) (when (send key-event get-control-down) (set! history (undo-last-action history scene)) (send this scene-draw))]
+                           [(up #\w) (send camera move 0 -1) (set! camera-pos (send camera get-position)) (send this scene-draw)]
+                           [(left #\a) (send camera move -1 0) (set! camera-pos (send camera get-position)) (send this scene-draw)]
+                           [(down #\s) (send camera move 0 1) (set! camera-pos (send camera get-position)) (send this scene-draw)]
+                           [(right #\d) (send camera move 1 0)(set! camera-pos (send camera get-position)) (send this scene-draw)])
+                         this)
+                       
+                       (define (pt-in-scene? p)
+                         (and (unsafe-fx<= 0 (unsafe-pt-x p))
+                              (unsafe-fx<= 0 (unsafe-pt-y p)) 
+                              (unsafe-fx< (unsafe-pt-x p) scene-width)
+                              (unsafe-fx< (unsafe-pt-y p) scene-height)))
+                       
+                       (define/override (on-event mouse-event)
+                         (let ([p (send this clamp (send mouse-event get-x) (send mouse-event get-y))])
+                           (when (pt-in-scene? p)
+                             (let ([q (pt-sub p camera-pos)])
+                               ;  (unless (equal? q last-mouse-pt)
+                               (draw-tile (send scene get (unsafe-fx+ (unsafe-pt-x camera-pos) (unsafe-pt-x last-mouse-pt)) 
+                                                (unsafe-fx+ (unsafe-pt-y camera-pos) (unsafe-pt-y last-mouse-pt)))
+                                          (unsafe-pt-x last-mouse-pt) (unsafe-pt-y last-mouse-pt))
+                               (draw-tile cur-tile (unsafe-pt-x q) (unsafe-pt-y q))
+                               ;(unless (null? last-selected-points) 
+                               ;  (unselect-tiles last-selected-points))
+                               (set! last-mouse-pt q))
+                             (send cur-brush handle mouse-event)
+                             (set! history (history-add-actions history (send cur-brush get-history)))))
+                         (send container refresh))
+                       
+                       (define/public (get-width-in-chars) width)
+                       
+                       (define (coords-in-canvas? x y)
+                         (and (unsafe-fx>= y 0) (unsafe-fx>= x 0) (unsafe-fx< x width) (unsafe-fx< y height)))
+                       
+                       (define/public (draw-tile tile x y)
+                         (when (coords-in-canvas? x y)
+                           (send this write-tile x y tile)))
+                       
+                     (define/public (unselect-all)
+                      (let ([cx (unsafe-pt-x camera-pos)]
+                             [cy (unsafe-pt-y camera-pos)])
+                         (let loop ([ps last-selected-points])
+                           (unless (null? ps)
+                             (let* ([qx (unsafe-fx+ (unsafe-pt-x (unsafe-list-ref ps 0)) cx)]
+                                    [qy (unsafe-fx+ (unsafe-pt-y (unsafe-list-ref ps 0)) cy)]
+                                    [t (send scene get qx qy)])
+                               (send this write-tile qx qy t))
+                             (loop (unsafe-list-tail ps 1)))))
+                       (set! last-selected-points null))
+                       
+                     (define/public (select x y)
+                    
+                       (let* ([cx (unsafe-pt-x camera-pos)]
+                              [cy (unsafe-pt-y camera-pos)]
+                              [qx (unsafe-fx- x cx)]
+                              [qy (unsafe-fx- y cy)])
+                         (when (coords-in-canvas? qx qy)
+                           (set! last-selected-points (append last-selected-points (list (pt qx qy))))
+                           (send this write-tile
+                                 qx
+                                 qy
+                                 selection-tile))))
+                         
+                        
+                       (define/public (scene-draw)
+                         (let ([cx (unsafe-pt-x camera-pos)] [cy (unsafe-pt-y camera-pos)])
+                           (for* ([xi (in-range width)] [yi (in-range height)])
+                             (send this draw-tile (send scene get (unsafe-fx+ cx xi) (unsafe-fx+ cy yi)) xi yi)))
+                         (send container refresh))))
 
 (define (color? c) (and (object? c) (is-a? c color%)))
 (define (canvas? c) (and (object? c) (is-a? c canvas%)))
@@ -107,10 +129,10 @@
 (define (scene? e) (and (object? e) (is-a? e scene%)))
 (define tile/c (struct/c tile char? color? color? string?))
 (define pt/c (struct/c pt integer? integer?))
-(define/contract main-canvas+c%
-  (class/c [on-event (->m event? void?)]
-    [clamp (->m natural-number/c natural-number/c pt/c)]
-    [scene-draw (->m void?)]
-    [draw-selected-tiles (->m list? void?)]
-    [draw-tile (->m tile/c natural-number/c natural-number/c void?)])
-  main-canvas%)
+;(define/contract main-canvas+c%
+ ; (class/c [on-event (->m event? void?)]
+  ;  [clamp (->m natural-number/c natural-number/c pt/c)]
+  ;  [scene-draw (->m void?)]
+  ;  [draw-selected-tiles (->m list? void?)]
+  ;  [draw-tile (->m tile/c natural-number/c natural-number/c void?)])
+ ; main-canvas%)

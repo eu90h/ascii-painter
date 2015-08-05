@@ -2,7 +2,7 @@
 
 (provide symbol-canvas%)
 
-(require ascii-canvas "scene.rkt" "point.rkt" "util.rkt" "history.rkt" "brush.rkt")
+(require "ascii-canvas.rkt" "scene.rkt" "point.rkt" "util.rkt" "history.rkt" "brush.rkt")
 
 (define symbol-canvas% (class ascii-canvas%
   ; Frame% Scene% (Tile Pair -> Any)

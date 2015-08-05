@@ -1,16 +1,13 @@
 #lang racket/gui
 
 (define (color? c) (and (object? c) (is-a? c color%)))
-(define (canvas? c) (and (object? c) (is-a? c canvas%)))
-(define (event? e) (and (object? e) (is-a? e event%)))
-(define (scene? e) (and (object? e) (is-a? e scene%)))
 
 (provide (contract-out
-  [struct tile ([symbol char?] [fg color?] [bg color?] [descr string?])]
-  [unsafe-tile-symbol (-> tile/c char?)]
-  [unsafe-tile-fg (-> tile/c color?)]
-  [unsafe-tile-bg (-> tile/c color?)]
-  [unsafe-tile-descr (-> tile/c string?)]) 
+  [struct tile ([symbol char?] [fg color?] [bg color?] [descr string?])])
+  unsafe-tile-symbol
+  unsafe-tile-fg 
+  unsafe-tile-bg 
+  unsafe-tile-descr
   scene% 
   empty-tile 
   selection-tile 
@@ -20,8 +17,8 @@
 (require racket/serialize racket/unsafe/ops)
 
 ; a tile is a Char, Color, Color, String
- ; the atomic unit of which scenes are composed is the tile
- (serializable-struct tile (symbol fg bg descr))
+; the atomic unit of which scenes are composed is the tile
+(serializable-struct tile (symbol fg bg descr))
 (define tile/c (struct/c tile char? color? color? string?))
 (define (unsafe-tile-symbol t) (unsafe-struct-ref t 0))
 (define (unsafe-tile-fg t) (unsafe-struct-ref t 1))
@@ -64,7 +61,7 @@
 ; scene -> serialized-object
 ; serializes all tiles in a scene
 (define (serialize-scene s)
- (send s process-tiles serialize-tile) (serialize (send s get-data)))
+  (send s process-tiles serialize-tile) (serialize (send s get-data)))
 
 ; scene -> scene
 ; deserializes all tiles in a scene
@@ -77,46 +74,46 @@
 ; a scene is a collection of tiles
 (define-serializable-class scene%
   object%
-
+  
   ; Integer Integer Tile
   (init-field width height tile)
   
   (field (data (for/vector ([y height]) (for/vector ([x width]) tile)))) ; a 2d vector of tiles
-
+  
   (super-new)
   
   ; Void -> Vector
   (define/public (get-data) data)
-
+  
   ; Vector -> Scene
   (define/public (set-data d) (begin (set! data d) this))
-
+  
   ; Integer Integer -> Boolean
   ; returns true if the given integers lie within the scene's width and height
   (define (good-xy? x y)
     (and (unsafe-fx>= y 0) (unsafe-fx>= x 0) (unsafe-fx< x width) (unsafe-fx< y height)))
-
+  
   ; Integer Integer -> Tile
   ; retrieves the tile at the given location, unless the location is not good-xy?, in which case return empty-tile
   (define/public (get x y) (if (good-xy? x y) (unsafe-vector-ref (unsafe-vector-ref data y) x) empty-tile))
   
   ; Void -> Integer
   (define/public (get-width) width)
-
+  
   ; Void -> Integer
   (define/public (get-height) height)
   
   ; Void -> Scene%
   (define/public (copy) (let ([s (make-object scene% width height tile)])
                           (for* ([x (in-range width)] [y (in-range height)])
-                              (send s set x y (send this get x y))) s))
-
+                            (send s set x y (send this get x y))) s))
+  
   ; Integer Integer Tile -> Scene
   (define/public (set x y tile) (when (good-xy? x y) (unsafe-vector-set! (unsafe-vector-ref data y) x tile) this))
-
+  
   ; (Tile -> Tile) -> Scene
   ; given a callback that takes and returns tiles, applies it to all tiles in the scene and updates them with the
   ; output of the callback
   (define/public (process-tiles fn) (for* ([x (in-range width)] [y (in-range height)])
-    (send this set x y (fn (send this get x y))) this)))
+                                      (send this set x y (fn (send this get x y))) this)))
 

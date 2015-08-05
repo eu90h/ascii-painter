@@ -6,22 +6,23 @@
 (define (scene? e) (and (object? e) (is-a? e scene%)))
 (define tile/c (struct/c tile char? color? color? string?))
 (define pt/c (struct/c pt integer? integer?))
-(provide (contract-out 
-    [colors list?] 
-    [random-element (-> list? any/c)]
-    [random-color (-> color?)]  
-    [random-integer (-> integer? integer? integer?)]
-    [random-pt (-> integer? integer? integer? integer? pt/c)]
-    [evt-clamp (-> canvas? event? (struct/c pt natural-number/c natural-number/c))]
-    [trace-line (-> (-> natural-number/c natural-number/c any) pt/c pt/c any)]
-    [trace-filled-rectangle (-> (-> integer? integer? any) pt/c pt/c any)]
-    [trace-circle (-> (-> integer? integer? any) pt/c natural-number/c any)]
-    [trace-weird-circle (-> (-> integer? integer? any) pt/c natural-number/c any)] 
-    [trace-weird-star (-> (-> integer? integer? any) pt/c natural-number/c any)]
-    [trace-weird-rectangle (-> (-> integer? integer? any) pt/c natural-number/c any)]
-    [trace-diamond (-> (-> integer? integer? any) pt/c natural-number/c any)]
-    [paint-scene (-> list? scene? natural-number/c natural-number/c tile/c any)])
-  random-wall-pt random-interior-pt)
+(provide select-rectangle draw-filled-rectangle evt-clamp  paint-scene
+         (contract-out 
+          [colors list?] 
+          [random-element (-> list? any/c)]
+          [random-color (-> color?)]  
+          [random-integer (-> integer? integer? integer?)]
+          [random-pt (-> integer? integer? integer? integer? pt/c)]
+          ; [evt-clamp (-> canvas? event? (struct/c pt natural-number/c natural-number/c))]
+          [trace-line (-> (-> natural-number/c natural-number/c any) pt/c pt/c any)]
+          [trace-filled-rectangle (-> (-> integer? integer? any) pt/c pt/c any)]
+          [trace-circle (-> (-> integer? integer? any) pt/c natural-number/c any)]
+          [trace-weird-circle (-> (-> integer? integer? any) pt/c natural-number/c any)] 
+          [trace-weird-star (-> (-> integer? integer? any) pt/c natural-number/c any)]
+          [trace-weird-rectangle (-> (-> integer? integer? any) pt/c natural-number/c any)]
+          [trace-diamond (-> (-> integer? integer? any) pt/c natural-number/c any)])
+         ;[paint-scene (-> list? scene? natural-number/c natural-number/c tile/c any)])
+         random-wall-pt random-interior-pt)
 
 (require "scene.rkt" "point.rkt" "history.rkt" "room.rkt")
 
@@ -40,7 +41,7 @@
   (check-eq? null (random-element null))
   (define (is-a-number-in-list? l v) (and (number? v) (list? (member v l))))
   (define list-of-nums (build-list (random 100) (lambda (x) (random 100))))
-
+  
   (check-pred ((curry is-a-number-in-list?) list-of-nums) (random-element list-of-nums))
   (check-pred void? (random-element (cons 1 2))))
 
@@ -69,7 +70,7 @@
 ; Canvas% Event -> Pt
 ; takes a mouse event and clamps the mouse event coordinates to the given canvas
 (define (evt-clamp canvas evt)
-	(send canvas clamp (send evt get-x) (send evt get-y)))
+  (send canvas clamp (send evt get-x) (send evt get-y)))
 
 ; (Integer Integer -> Void) Integer Integer Integer -> Void
 ; applies a callback to every point on a vertical line
@@ -82,6 +83,41 @@
 (define (trace-row callback y x0 x1)
   (for ([x (in-range (min x0 x1) (add1 (max x0 x1)))])
     (callback x y)))
+
+; main-canvas% Integer Integer Integer -> Void
+; calls main-canvas% method select for every point on a vertical line
+(define (select-column canvas x y0 y1)
+  (for ([y (in-range (min y0 y1) (add1 (max y0 y1)))])
+    (send canvas select x y)))
+
+; main-canvas% Integer Integer Integer -> Void
+; calls main-canvas% method select for every point on a horizontal line
+(define (select-row canvas y x0 x1)
+  (for ([x (in-range (min x0 x1) (add1 (max x0 x1)))])
+    (send canvas select x y)))
+
+(define (draw-filled-rectangle scene tile p q)
+  (define min-x (unsafe-fxmin (unsafe-pt-x p) (unsafe-pt-x q)))
+  (define min-y (unsafe-fxmin (unsafe-pt-y p) (unsafe-pt-y q)))
+  
+  (define max-x (sub1 (unsafe-fx+ 1 (unsafe-fxmax (unsafe-pt-x p) (unsafe-pt-x q)))))
+  (define max-y (sub1 (unsafe-fx+ 1 (unsafe-fxmax (unsafe-pt-y p) (unsafe-pt-y q)))))
+  
+  (for* ([x (in-range min-x max-x)]
+         [y (in-range min-y max-y)])
+    ;(set! tiles-drawn (append tiles-drawn (list (list (send scene get x y) x y))))
+    (send scene set x y tile)))
+
+(define (select-rectangle canvas p q)
+  (define min-x (unsafe-fxmin (unsafe-pt-x p) (unsafe-pt-x q)))
+  (define min-y (unsafe-fxmin (unsafe-pt-y p) (unsafe-pt-y q)))
+  
+  (define max-x (sub1 (unsafe-fx+ 1 (unsafe-fxmax (unsafe-pt-x p) (unsafe-pt-x q)))))
+  (define max-y (sub1 (unsafe-fx+ 1 (unsafe-fxmax (unsafe-pt-y p) (unsafe-pt-y q)))))
+  (select-column canvas min-x min-y max-y)
+  (select-column canvas max-x min-y max-y)
+  (select-row canvas min-y min-x max-x)
+  (select-row canvas max-y min-x max-x))
 
 ; (Integer Integer -> Void) Pt Pt -> Void 
 ; an implementation of Bresenham's line algorithm
@@ -97,21 +133,21 @@
       (set! the-pts (append the-pts (list (list x y))))))
   (define (trace)
     (apply-callback (pt-x p) (pt-y p))
-     (let ([error 0.0] [delta-error (if (zero? dx) 0.0 (abs (/ dy dx)))] [y-step (sign (- (pt-y q) (pt-y p)))])
+    (let ([error 0.0] [delta-error (if (zero? dx) 0.0 (abs (/ dy dx)))] [y-step (sign (- (pt-y q) (pt-y p)))])
       (define (loop x y0 e0)
         (unless (= (pt-x q) x)
           (apply-callback (inexact->exact x) (inexact->exact y0))
           (apply loop (let f ([y y0] [e (+ e0 delta-error)])
                         (if (>= e 0.5)
-                          (begin (apply-callback (inexact->exact x) (inexact->exact y))
-                                 (f (+ y y-step) (- e 1.0)))
-                          (list (next x) y e))))))
-    (loop (pt-x p) (pt-y p) error)
-    (apply-callback (pt-x q) (pt-y q))))
+                            (begin (apply-callback (inexact->exact x) (inexact->exact y))
+                                   (f (+ y y-step) (- e 1.0)))
+                            (list (next x) y e))))))
+      (loop (pt-x p) (pt-y p) error)
+      (apply-callback (pt-x q) (pt-y q))))
   (cond [(> (pt-x p) (pt-x q)) (trace-line callback q p)]
-    [(zero? dx) (trace-column apply-callback (pt-x p) (pt-y p) (pt-y q))]
-    [(zero? dy) (trace-row apply-callback (pt-y p) (pt-x p) (pt-x q))]
-    [else (trace)]))
+        [(zero? dx) (trace-column apply-callback (pt-x p) (pt-y p) (pt-y q))]
+        [(zero? dy) (trace-row apply-callback (pt-y p) (pt-x p) (pt-x q))]
+        [else (trace)]))
 
 ; (Integer Integer -> Void) Pt Integer -> Void
 ; applies a callback to integer points on a circle of given radius 
@@ -121,108 +157,108 @@
   (define (apply-callback x y) 
     (when (eq? #f (member (list x y) the-pts))
       (callback x y)
-      (set! the-pts (append the-pts (list (list x y))))))
-  (define center-x (pt-x p))
-  (define center-y (pt-y p))
+      (set! the-pts (unsafe-cons-list the-pts (list (list x y))))))
+  (define center-x (unsafe-pt-x p))
+  (define center-y (unsafe-pt-y p))
   (define (loop x y decisionOver2)
-    (when (>= x y)
-      (apply-callback (+ x center-x) (+ y center-y))
-      (apply-callback (+ y center-x) (+ x center-y))
-      (apply-callback (- center-x x) (+ y center-y))
-      (apply-callback (- center-x y) (+ x center-y))
-
-      (apply-callback (+ x center-x) (- center-y y))
-      (apply-callback (+ y center-x) (- center-y x))
-      (apply-callback (- center-x x) (- center-y y))
-      (apply-callback (- center-x y) (- center-y x))
-      (if (<= decisionOver2 0)
-        (loop x (add1 y) (+ decisionOver2 1 (* 2 (add1 y))))
-        (loop (sub1 x) (add1 y) (+ decisionOver2 1 (* 2 (- (add1 y) (add1 x))))))))
-  (loop radius 0 (- 1 radius)))
+    (when (unsafe-fx>= x y)
+      (apply-callback (unsafe-fx+ x center-x) (unsafe-fx+ y center-y))
+      (apply-callback (unsafe-fx+ y center-x) (unsafe-fx+ x center-y))
+      (apply-callback (unsafe-fx- center-x x) (unsafe-fx+ y center-y))
+      (apply-callback (unsafe-fx- center-x y) (unsafe-fx+ x center-y))
+      
+      (apply-callback (unsafe-fx+ x center-x) (unsafe-fx- center-y y))
+      (apply-callback (unsafe-fx+ y center-x) (unsafe-fx- center-y x))
+      (apply-callback (unsafe-fx- center-x x) (unsafe-fx- center-y y))
+      (apply-callback (unsafe-fx- center-x y) (unsafe-fx- center-y x))
+      (if (unsafe-fx<= decisionOver2 0)
+          (loop x (unsafe-fx+ y 1) (unsafe-fx+ 1 (unsafe-fx+ decisionOver2 (unsafe-fx* 2 (unsafe-fx+ 1 y)))))
+          (loop (unsafe-fx- x 1) (unsafe-fx+ 1 y) (unsafe-fx+ 1 (unsafe-fx+ decisionOver2 (unsafe-fx* 2 (- (unsafe-fx+ 1 y) (unsafe-fx+ 1 x)))))))))
+  (loop radius 0 (unsafe-fx- 1 radius)))
 
 ; (Integer Integer -> Void) Pt Pt
 ; applies a callback to all points within two pts
 (define (trace-filled-rectangle callback p q)
- (define min-x (unsafe-fxmin (pt-x p) (pt-x q)))
- (define min-y (unsafe-fxmin (pt-y p) (pt-y q)))
-
- (define max-x (unsafe-fx+ 1 (unsafe-fxmax (pt-x p) (pt-x q))))
- (define max-y (unsafe-fx+ 1 (unsafe-fxmax (pt-y p) (pt-y q))))
-
- (for* ([x (in-range min-x max-x)]
-        [y (in-range min-y max-y)])
+  (define min-x (unsafe-fxmin (unsafe-pt-x p) (unsafe-pt-x q)))
+  (define min-y (unsafe-fxmin (unsafe-pt-y p) (unsafe-pt-y q)))
+  
+  (define max-x (unsafe-fx+ 1 (unsafe-fxmax (unsafe-pt-x p) (unsafe-pt-x q))))
+  (define max-y (unsafe-fx+ 1 (unsafe-fxmax (unsafe-pt-y p) (unsafe-pt-y q))))
+  
+  (for* ([x (in-range min-x max-x)]
+         [y (in-range min-y max-y)])
     (callback x y)))
 
 ; (Integer Integer -> Void) Pt Integer -> Void
 ; applies a callback to integer points on a diamond of given radius
 (define (trace-diamond callback p radius)
-  (define center-x (pt-x p))
-  (define center-y (pt-y p))
+  (define center-x (unsafe-pt-x p))
+  (define center-y (unsafe-pt-y p))
   (define (loop x y r error)
-    (when (< x 0)
-      (callback (- center-x x) (+ center-y y))
-      (callback (- center-x y) (- center-y x))
-      (callback (+ center-x x) (- center-y y))
-      (callback (+ center-x y) (+ center-y x))
+    (when (unsafe-fx< x 0)
+      (callback (unsafe-fx- center-x x) (unsafe-fx+ center-y y))
+      (callback (unsafe-fx- center-x y) (unsafe-fx- center-y x))
+      (callback (unsafe-fx+ center-x x) (unsafe-fx- center-y y))
+      (callback (unsafe-fx+ center-x y) (unsafe-fx+ center-y x))
       (let ([new-r error] [new-error error] [new-x x] [new-y y])
-        (when (<= new-r y) (set! new-y (add1 new-y)) (set! new-error (+ error 1 (* 2 new-y))))
-        (when (or (> r x) (> error y)) (set! new-x (add1 new-x)) (set! new-error (+ new-error 1 (* 2 new-x))))
+        (when (unsafe-fx<= new-r y) (set! new-y (unsafe-fx+ 1 new-y)) (set! new-error (unsafe-fx+ 1 (unsafe-fx+ error (unsafe-fx* 2 new-y)))))
+        (when (or (unsafe-fx> r x) (unsafe-fx> error y)) (set! new-x (unsafe-fx+ 1 new-x)) (set! new-error (unsafe-fx+ 1 (unsafe-fx+ new-error (unsafe-fx* 2 new-x)))))
         (loop new-x new-y new-r new-error))))
-  (loop (* -1 radius) 0 radius (- 2 (* 1 radius))))
+  (loop (unsafe-fx* -1 radius) 0 radius (unsafe-fx- 2 (unsafe-fx* 1 radius))))
 
 
 ; (Integer Integer -> Void) Pt Integer -> Void
 ; applies a callback to integer points on a "wierd" star shape of given radius
 (define (trace-weird-star callback p radius)
-  (define center-x (pt-x p))
-  (define center-y (pt-y p))
+  (define center-x (unsafe-pt-x p))
+  (define center-y (unsafe-pt-y p))
   (define (loop x y r error)
-    (when (< x 0)
-      (callback (- center-x x) (+ center-y y))
-      (callback (- center-x y) (- center-y x))
-      (callback (+ center-x x) (- center-y y))
-      (callback (+ center-x y) (+ center-y x))
+    (when (unsafe-fx< x 0)
+      (callback (unsafe-fx- center-x x) (unsafe-fx+ center-y y))
+      (callback (unsafe-fx- center-x y) (unsafe-fx- center-y x))
+      (callback (unsafe-fx+ center-x x) (unsafe-fx- center-y y))
+      (callback (unsafe-fx+ center-x y) (unsafe-fx+ center-y x))
       (let ([new-r error] [new-error error] [new-x x] [new-y y])
-        (when (<= new-r y) (set! new-y (add1 new-y)) (set! new-error (+ error 1 (* 2 y))))
-        (when (or (> r x) (> error y)) (set! new-x (add1 new-x)) (set! new-error (+ error 1 (* 2 x))))
+        (when (unsafe-fx<= new-r y) (set! new-y (unsafe-fx+ 1 new-y)) (set! new-error (unsafe-fx+ 1 (unsafe-fx+ error (unsafe-fx* 2 y)))))
+        (when (or (unsafe-fx> r x) (unsafe-fx> error y)) (set! new-x (unsafe-fx+ 1 new-x)) (set! new-error (unsafe-fx+ 1 (unsafe-fx+ error (unsafe-fx* 2 x)))))
         (loop new-x new-y new-r new-error))))
-  (loop (* -1 radius) 0 radius (- 2 (* 2 radius))))
+  (loop (unsafe-fx* -1 radius) 0 radius (unsafe-fx- 2 (unsafe-fx* 2 radius))))
 
 ; (Integer Integer -> Void) Pt Integer -> Void
 ; applies a callback to integer points on a "wierd" rectangular shape of given radius
 (define (trace-weird-rectangle callback p radius)
-  (define center-x (pt-x p))
-  (define center-y (pt-y p))
+  (define center-x (unsafe-pt-x p))
+  (define center-y (unsafe-pt-y p))
   (define (loop x y r error)
-    (when (< x 0)
-      (callback (- center-x x) (+ center-y y))
-      (callback (- center-x y) (- center-y x))
-      (callback (+ center-x x) (- center-y y))
-      (callback (+ center-x y) (+ center-y x))
+    (when (unsafe-fx< x 0)
+      (callback (unsafe-fx- center-x x) (unsafe-fx+ center-y y))
+      (callback (unsafe-fx- center-x y) (unsafe-fx- center-y x))
+      (callback (unsafe-fx+ center-x x) (unsafe-fx- center-y y))
+      (callback (unsafe-fx+ center-x y) (unsafe-fx+ center-y x))
       (let ([new-r error] [new-error error] [new-x x] [new-y y])
-        (when (<= new-r y) (set! new-y (add1 new-y)) (set! new-error (+ error 1 (* 2 new-y))))
-        (when (or (> r x) (> error y)) (set! new-x (add1 new-x)) (set! new-error (+ error 1 (* 2 new-x))))
+        (when (unsafe-fx<= new-r y) (set! new-y (unsafe-fx+ 1 new-y)) (set! new-error (unsafe-fx+ 1 (unsafe-fx+ error (unsafe-fx* 2 new-y)))))
+        (when (or (unsafe-fx> r x) (unsafe-fx> error y)) (set! new-x (unsafe-fx+ 1 new-x)) (set! new-error (unsafe-fx+ 1 (unsafe-fx+ error (unsafe-fx* 2 new-x)))))
         (loop new-x new-y new-r new-error))))
-  (loop (* -1 radius) 0 radius (- 2 (* 2 radius))))
+  (loop (unsafe-fx* -1 radius) 0 radius (unsafe-fx- 2 (unsafe-fx* 2 radius))))
 
 ; (Integer Integer -> Void) Pt Integer -> Void
 ; applies a callback to integer points on a "weird" circlular shape of given radius
 (define (trace-weird-circle callback p radius)
-  (define center-x (pt-x p))
-  (define center-y (pt-y p))
+  (define center-x (unsafe-pt-x p))
+  (define center-y (unsafe-pt-y p))
   (define (loop x y r error)
-    (when (< x 0)
-      (callback (- center-x x) (+ center-y y))
-      (callback (- center-x y) (- center-y x))
-      (callback (+ center-x x) (- center-y y))
-      (callback (+ center-x y) (+ center-y x))
+    (when (unsafe-fx< x 0)
+      (callback (unsafe-fx- center-x x) (unsafe-fx+ center-y y))
+      (callback (unsafe-fx- center-x y) (unsafe-fx- center-y x))
+      (callback (unsafe-fx+ center-x x) (unsafe-fx- center-y y))
+      (callback (unsafe-fx+ center-x y) (unsafe-fx+ center-y x))
       (let ([new-r error] [new-error error] [new-x x] [new-y y])
-        (when (<= new-r y) 
-          (set! new-y (add1 new-y)) (set! new-error (+ new-error 1 (* 2 new-y))))
-        (when (or (> r x) (> error y)) 
-          (set! new-x (add1 new-x)) (set! new-error (+ new-error 1 (* 2 new-x))))
+        (when (unsafe-fx<= new-r y) 
+          (set! new-y (unsafe-fx+ 1 new-y)) (set! new-error (unsafe-fx+ 1 (unsafe-fx+ new-error (unsafe-fx* 2 new-y)))))
+        (when (or (unsafe-fx> r x) (unsafe-fx> error y)) 
+          (set! new-x (unsafe-fx+ 1 new-x)) (set! new-error (unsafe-fx+ new-error (unsafe-fx* 2 new-x))))
         (loop new-x new-y new-r new-error))))
-  (loop (* -1 radius) 0 radius (- 2 (* 2 radius))))
+  (loop (unsafe-fx* -1 radius) 0 radius (unsafe-fx- 2 (unsafe-fx* 2 radius))))
 
 (define HISTORY-MAX 2000) ; max number of items in history
 (define HISTORY-DROP 500) ; how many actions to remove from the history after going over HISTORY-MAX
@@ -232,5 +268,5 @@
 (define (paint-scene history scene x y tile)
   (when (>= (length history) HISTORY-MAX) (drop history HISTORY-DROP))
   (define new-history (history-add-action history (action 'atomic (list (list (send scene get x y) x y)))))
-    (send scene set x y tile)
-    new-history)
+  (send scene set x y tile)
+  new-history)
