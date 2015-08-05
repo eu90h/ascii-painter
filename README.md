@@ -7,6 +7,12 @@ place tiles in the exact area you need them.
 
 This tool would be good for creating static city/town levels for instance.
 
+Binaries
+--------
+OS X - [ascii-painter.dmg](https://www.dropbox.com/s/px6q44qe999gfa0/ascii-painter.dmg?dl=0)
+
+Windows - [ascii-painter.zip](https://www.dropbox.com/s/632azukuzxyfc4t/ascii-painter.zip?dl=0)
+
 Screenshots
 -----------
 A little example
@@ -29,14 +35,8 @@ Finally, no Lisp program is complete without Lambdas!
 
 ![Lambda](https://i.imgur.com/DG5qYXV.png)
 
-Binaries
---------
-coming soon
-
 Usage
 -----
-Run `racket ascii-painter.rkt` to start the program.
-
 The default map is 100x60. To change the dimensions, click File->New Map.
 The camera is controlled with the arrow keys.
 
