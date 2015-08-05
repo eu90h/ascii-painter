@@ -35,8 +35,6 @@ coming soon
 
 Usage
 -----
-Ascii-painter requires @jpverkamp's ascii-canvas library.
-
 The default map is 100x60. To change the dimensions, click File->New Map.
 The camera is controlled with the arrow keys.
 
