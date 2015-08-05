@@ -46,7 +46,7 @@ Features
 * Generators (Fill map, Random Placement)
 * Full color support
 * All glyphs in code-page 437 supported
-* Saving and loading of maps
+* Saving and loading maps in csv format
 * Undo (press ctrl-z)
 
 Upcoming Features
