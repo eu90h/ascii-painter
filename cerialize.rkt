@@ -21,11 +21,11 @@
 
 (define (cerialize-string s out)
 	(when (and (string? s) (output-port? out))
-		(display s out) ))
+		(display s out)))
 
 (define (cerialize-number n out)
 	(when (and (number? n) (output-port? out))
-		(display (number->string n) out) ))
+		(display (number->string n) out)))
 
 (define (cerialize-char c out)
 	(when (and (char? c) (output-port? out))
@@ -39,7 +39,7 @@
 		(display "," out)
 		(cerialize-number (send c blue) out)
 		(display "," out)
-		(cerialize-number (send c alpha) out))
+		(cerialize-number (send c alpha) out)))
 
 (define (uncerialize-line line)
 	(define parts (string-split line ","))
