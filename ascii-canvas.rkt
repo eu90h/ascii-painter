@@ -6,7 +6,7 @@
  racket/path
  racket/runtime-path
  racket/unsafe/ops
- "scene.rkt")
+ "scene.rkt" "util.rkt")
 
 (provide
  (all-defined-out))
@@ -44,12 +44,6 @@
      (make-object color% r g b)]
     [(r g b a)
      (make-object color% r g b a)]))
-
-; Test if colors are equal
-(define (color-equal? c1 c2) (and (= (send c1 red) (send c2 red))
-                                  (= (send c1 green) (send c2 green))
-                                  (= (send c1 blue) (send c2 blue))
-                                  (= (send c1 alpha) (send c2 alpha))))
 
 ; A canvas to draw on with ASCII characters
 (define ascii-canvas%

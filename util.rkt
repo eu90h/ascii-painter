@@ -24,7 +24,8 @@
   [trace-weird-rectangle (-> (-> integer? integer? any) pt/c natural-number/c any)]
   [trace-diamond (-> (-> integer? integer? any) pt/c natural-number/c any)]
   [paint-scene (-> list? scene? natural-number/c natural-number/c tile/c any)])
- random-wall-pt random-interior-pt)
+ random-wall-pt random-interior-pt
+ color-equal? tile-equal?)
 
 (require "scene.rkt" "point.rkt" "history.rkt" "room.rkt")
 
@@ -253,3 +254,14 @@
   (define new-history (history-add-action history (action 'atomic (list (list (send scene get x y) x y)))))
   (send scene set x y tile)
   new-history)
+
+; Test if colors are equal
+(define (color-equal? c1 c2) (and (= (send c1 red) (send c2 red))
+                                  (= (send c1 green) (send c2 green))
+                                  (= (send c1 blue) (send c2 blue))
+                                  (= (send c1 alpha) (send c2 alpha))))
+(define (tile-equal? a b)
+  (and (equal? (tile-symbol a) (tile-symbol b))
+       (color-equal? (tile-fg a) (tile-fg b))
+       (color-equal? (tile-bg a) (tile-bg b))
+       (equal? (tile-descr a) (tile-descr b))))

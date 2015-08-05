@@ -5,14 +5,12 @@
 (provide (contract-out
   [struct tile ([symbol char?] [fg color?] [bg color?] [descr string?])])
   unsafe-tile-symbol
-  unsafe-tile-fg 
-  unsafe-tile-bg 
+  unsafe-tile-fg
+  unsafe-tile-bg
   unsafe-tile-descr
-  scene% 
-  empty-tile 
-  selection-tile 
-  serialize-scene 
-  deserialize-scene)
+  scene%
+  empty-tile
+  selection-tile)
 
 (require racket/serialize racket/unsafe/ops)
 
@@ -27,49 +25,6 @@
 
 (define empty-tile (tile #\# (make-object color% 0 0 0 1.0) (make-object color% 0 0 0 1.0) "empty"))
 (define selection-tile (tile #\X (make-object color% 255 255 0 1.0) (make-object color% 0 0 0 1.0) "Crosshair"))
-
-; this is a serializable version of the color% object. since color% objects aren't serializable, this is necessary.
-(define-serializable-class serial-color% object% (init-field red green blue [alpha 1.0]) 
-  (define/public (get-red) red) (define/public (get-green) green) (define/public (get-blue) blue) (define/public (get-alpha) alpha) 
-  (super-new))
-
-; color% -> serial-color%
-; converts a color% to a serial-color%
-; this sucks but color% objects aren't serializable so we have to wrap it
-(define (serialize-color c) 
- (make-object serial-color% (send c red) (send c blue) (send c green) (send c alpha)))
-
-; color% -> serial-color%
-; converts a serial-color% to a color%. this is the inverse of serialize-color.
-(define (deserialize-color c) 
-  (make-object color% 
-    (send c get-red) 
-    (send c get-blue) 
-    (send c get-green) 
-    (send c get-alpha)))
-
-; tile -> tile
-; converts the color% objects inside the tile into serial-color% objects
-(define (serialize-tile t) 
-  (tile (tile-symbol t) (serialize-color (tile-fg t)) (serialize-color (tile-bg t)) (tile-descr t)))
-
-; tile -> tile
-; converts the serial-color% objects inside the tile into color% objects. this the inverse of serialize-tile
-(define (deserialize-tile t) 
-  (tile (tile-symbol t) (deserialize-color (tile-fg t)) (deserialize-color (tile-bg t)) (tile-descr t)))
-
-; scene -> serialized-object
-; serializes all tiles in a scene
-(define (serialize-scene s)
-  (send s process-tiles serialize-tile) (serialize (send s get-data)))
-
-; scene -> scene
-; deserializes all tiles in a scene
-(define (deserialize-scene s)
-  (let* ([data (deserialize s)] [height (vector-length data)] [width (vector-length (vector-ref data 0))] [new-scene (make-object scene% width height empty-tile)])
-    (send new-scene set-data data)
-    (send new-scene process-tiles deserialize-tile)
-    new-scene))
 
 ; a scene is a collection of tiles
 (define-serializable-class scene%

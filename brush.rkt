@@ -97,7 +97,7 @@
                               [radius 4]
                               [tracer trace-line]
                               [shape "line"]
-                              [shapes (list "line" "filled-rectangle" "circle" "weird-circle" "weird-rectangle" "weird-star" "diamond")]
+                              [shapes (list "line" "rectangle" "filled-rectangle" "circle" "weird-circle" "weird-rectangle" "weird-star" "diamond")]
                               [width (send scene get-width)]
                               [height (send scene get-height)]
                               [last-mouse-pt null])
@@ -122,13 +122,13 @@
                        (define (build-tracer-args mouse-event)
                          (case shape
                            [("line") (list set-and-accumulate initial-pt (evt-clamp canvas mouse-event))]
-                           [("filled-rectangle") (list set-and-accumulate initial-pt (evt-clamp canvas mouse-event))]
+                           [("filled-rectangle" "rectangle") (list set-and-accumulate initial-pt (evt-clamp canvas mouse-event))]
                            [("circle" "weird-circle" "weird-rectangle" "weird-star" "diamond") (list set-and-accumulate (evt-clamp canvas mouse-event) radius)]))
 
                        (define (build-selector-args mouse-event)
                          (case shape
                            [("line") (list select-tile initial-pt (evt-clamp canvas mouse-event))]
-                           [("filled-rectangle") (list select-tile initial-pt (evt-clamp canvas mouse-event))]
+                           [("filled-rectangle" "rectangle") (list select-tile initial-pt (evt-clamp canvas mouse-event))]
                            [("circle" "weird-circle" "weird-rectangle" "weird-star" "diamond") (list select-tile (evt-clamp canvas mouse-event) radius)]))
                        
                        (define (handle-left-up mouse-event)
@@ -144,7 +144,7 @@
                          (send canvas scene-draw))
                        
                        (define (handle-select mouse-event)
-                         (if (false? (member shape (list "line" "filled-rectangle")))
+                         (if (false? (member shape (list "line" "filled-rectangle" "rectangle")))
                              (begin (send canvas unselect-all)
                                     (apply (find-selector shape) (build-selector-args mouse-event)))
                              (when (and placing
@@ -160,6 +160,7 @@
                          (case s
                            [("line") trace-line]
                            [("circle") trace-circle]
+                           [("rectangle") trace-unfilled-rectangle]
                            [("filled-rectangle") trace-filled-rectangle]
                            [("weird-circle") trace-weird-circle]
                            [("weird-rectangle") trace-weird-rectangle]
@@ -170,6 +171,7 @@
                          (case s
                            [("line") trace-line]
                            [("circle") trace-circle]
+                           [("rectangle") trace-unfilled-rectangle]
                            [("filled-rectangle") trace-unfilled-rectangle]
                            [("weird-circle") trace-weird-circle]
                            [("weird-rectangle") trace-weird-rectangle]

@@ -39,13 +39,6 @@
   (send tile-fg-canvas redraw)
   (send tile-bg-canvas redraw))
 
-(define (get-tile-index l v)
-  (define (iter l i) 
-    (if (null? l) -1 
-        (if (eq? (tile-descr (first l)) v) i 
-            (iter (rest l) (add1 i)))))
-  (iter l 0))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define canvas-width 60)
@@ -125,8 +118,20 @@
   (define new-scene (make-object scene% (first dimensions) (second dimensions) empty-tile))
   (for* ([x (in-range 0 (first dimensions))] [y (in-range 0 (second dimensions))])
     (define t (uncerialize-line (read-line in)))
+    (when (null? (filter (lambda (v) (tile-equal? v t)) tiles))
+        (set! tiles (append tiles (list t)))
+        (send tile-choices append 
+              (string-append 
+               (tile-descr t) 
+               "  #" 
+               (number->string 
+                (length
+                 (filter (lambda (v) (equal? v (tile-symbol t))) 
+                         (map tile-symbol tiles))))))'
+        (send tile-choices set-selection (sub1 (length tiles))))
+   
     (send new-scene set x y t))
-  
+ ;  (set! tiles (append (list empty-tile) (drop (reverse tiles) 1)))
   (change-scene 
    new-scene
    (last (string-split (path->string path) "/")))
@@ -246,7 +251,8 @@
 (define tile-library-panel (new vertical-panel% [parent canvas-left-panel] [style (list 'border)]))
 (define tile-choices-callback
   (thunk*
-   (set-cur-tile (list-ref tiles (get-tile-index tiles (send tile-choices get-string-selection))))))
+  (set-cur-tile (list-ref tiles (send tile-choices get-selection)))))
+   ;(set-cur-tile (first (filter (lambda (t) (equal? (send tile-choices get-string) (tile-descr t))) tiles)))))     
 (define tile-choices (new choice% [parent tile-library-panel]
                           [label "Saved Tiles"]
                           [choices (map tile-descr tiles)]
@@ -279,7 +285,7 @@
   [callback save-tile-btn-callback]))
 
 (define remove-tile-btn-callback (thunk*
-                                  (let* ([t (list-ref tiles (get-tile-index tiles (send tile-choices get-string-selection)))]
+                                  (let* ([t (list-ref tiles (send tile-choices get-selection))]
                                          [remove? (eq? 'yes 
                                                        (message-box "Remove Tile" (string-append "Are you sure you want to remove " (tile-descr t)) frame '(yes-no)))])
                                     (when (and remove? (not (eq? "empty" (tile-descr t))))
@@ -307,7 +313,7 @@
   (send canvas set-brush b)
   (send cur-brush set-tile cur-tile)
   (send shape-size-slider show (and (eq? cur-brush shape-brush)
-                                    (false? (member (send cur-brush get-shape) (list "line" "filled-rectangle"))))))
+                                    (false? (member (send cur-brush get-shape) (list "line" "filled-rectangle" "rectangle"))))))
 
 (define brush-paint-btn (new button% [label (send paint-brush get-name)] [parent brush-hpanel] 
                              [callback (thunk* (switch-brush paint-brush))]))
@@ -315,10 +321,11 @@
 (define brush-single-btn (new button% [label "Single"] [parent brush-hpanel] 
                               [callback (thunk* (switch-brush single-brush))]))
 
-(define shape-brush-btn (new button% [label "Shape"] [parent brush-hpanel]
-                             [callback (thunk* (switch-brush shape-brush))]))
+;(define shape-brush-btn (new button% [label "Shape"] [parent brush-hpanel]
+ ;                            [callback (thunk* (switch-brush shape-brush))]))
 
 (define (shape-choice-callback btn evt)
+  (switch-brush shape-brush)
   (define shape (send shape-choice get-string (send shape-choice get-selection)))
   (send shape-brush set-shape shape)
   (send shape-size-slider show (and (eq? cur-brush shape-brush)
