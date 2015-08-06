@@ -35,6 +35,8 @@
 
   (set! fg-color (tile-fg t))
   (set! bg-color (tile-bg t))
+  
+  (send symbol-canvas dye-tiles fg-color bg-color)
 
   (send tile-fg-canvas redraw)
   (send tile-bg-canvas redraw))
@@ -182,7 +184,8 @@
 (define (fill-generator-callback menu evt)
   (let ([fill-generator (make-object fill-generator% scene canvas tiles)])
     (send fill-generator process)
-    (change-scene (send fill-generator get-scene))))
+    (when (not (null? (send fill-generator get-scene))) 
+      (change-scene (send fill-generator get-scene)))))
 
 (define fill-generator-menu (new menu-item%
                                  (label "Fill")
