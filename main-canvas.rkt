@@ -80,10 +80,14 @@
                        
                        (define (coords-in-canvas? x y)
                          (and (unsafe-fx>= y 0) (unsafe-fx>= x 0) (unsafe-fx< x width) (unsafe-fx< y height)))
-                       
-                       (define/public (draw-tile tile x y)
+
+                       (define/public (draw-tile tile x y [subtract-camera? #f])
                          (when (coords-in-canvas? x y)
-                           (send this write-tile x y tile)))
+                           (if subtract-camera? (send this write-tile
+                                                      (unsafe-fx- x (unsafe-pt-x camera-pos))
+                                                      (unsafe-fx- y (unsafe-pt-y camera-pos))
+                                                      tile)
+                           (send this write-tile x y tile))))
                        
                      (define/public (unselect-all)
                       (send this scene-draw))

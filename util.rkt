@@ -23,7 +23,7 @@
   [trace-weird-star (-> (-> integer? integer? any) pt/c natural-number/c any)]
   [trace-weird-rectangle (-> (-> integer? integer? any) pt/c natural-number/c any)]
   [trace-diamond (-> (-> integer? integer? any) pt/c natural-number/c any)]
-  [paint-scene (-> list? scene? natural-number/c natural-number/c tile/c any)])
+  [paint-scene (-> list? scene? canvas? natural-number/c natural-number/c tile/c any)])
  random-wall-pt random-interior-pt
  color-equal? tile-equal?)
 
@@ -250,14 +250,15 @@
   (loop (unsafe-fx* -1 radius) 0 radius (unsafe-fx- 2 (unsafe-fx* 2 radius))))
 
 (define HISTORY-MAX 2000) ; max number of items in history
-(define HISTORY-DROP 500) ; how many actions to remove from the history after going over HISTORY-MAX
+(define HISTORY-DROP 1000) ; how many actions to remove from the history after going over HISTORY-MAX
 
-; History Scene Natural Natural Tile -> History
+; History Scene Canvas% Natural Natural Tile -> History
 ; paint a scene's tile at the given coordinates and then returns a history with the paint action added
-(define (paint-scene history scene x y tile)
+(define (paint-scene history scene canvas x y tile)
   (when (>= (length history) HISTORY-MAX) (drop history HISTORY-DROP))
   (define new-history (history-add-action history (action 'atomic (list (list (send scene get x y) x y)))))
   (send scene set x y tile)
+  (send canvas draw-tile tile x y #t)
   new-history)
 
 ; Test if colors are equal
