@@ -133,7 +133,6 @@
         (send tile-choices set-selection (sub1 (length tiles))))
    
     (send new-scene set x y t))
- ;  (set! tiles (append (list empty-tile) (drop (reverse tiles) 1)))
   (change-scene 
    new-scene
    (last (string-split (path->string path) "/")))
@@ -254,8 +253,7 @@
 (define tile-library-panel (new vertical-panel% [parent canvas-left-panel] [style (list 'border)]))
 (define tile-choices-callback
   (thunk*
-  (set-cur-tile (list-ref tiles (send tile-choices get-selection)))))
-   ;(set-cur-tile (first (filter (lambda (t) (equal? (send tile-choices get-string) (tile-descr t))) tiles)))))     
+  (set-cur-tile (list-ref tiles (send tile-choices get-selection)))))     
 (define tile-choices (new choice% [parent tile-library-panel]
                           [label "Saved Tiles"]
                           [choices (map tile-descr tiles)]
@@ -324,9 +322,6 @@
 
 (define brush-single-btn (new button% [label "Single"] [parent brush-hpanel] 
                               [callback (thunk* (switch-brush single-brush))]))
-
-;(define shape-brush-btn (new button% [label "Shape"] [parent brush-hpanel]
- ;                            [callback (thunk* (switch-brush shape-brush))]))
 
 (define (shape-choice-callback btn evt)
   (switch-brush shape-brush)
