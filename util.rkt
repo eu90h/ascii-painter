@@ -90,17 +90,22 @@
 ; (Integer Integer -> Void) Pt Pt -> Void
 ; traces the outline of a rectangle
 (define (trace-unfilled-rectangle callback p q)
+  (define the-pts null)
+  (define (apply-callback x y) 
+    (when (eq? #f (member (list x y) the-pts))
+      (callback x y)
+      (set! the-pts (append the-pts (list (list x y))))))
   (define min-x (unsafe-fxmin (unsafe-pt-x p) (unsafe-pt-x q)))
   (define min-y (unsafe-fxmin (unsafe-pt-y p) (unsafe-pt-y q)))
   
   (define max-x (unsafe-fx+ 1 (unsafe-fxmax (unsafe-pt-x p) (unsafe-pt-x q))))
   (define max-y (unsafe-fx+ 1 (unsafe-fxmax (unsafe-pt-y p) (unsafe-pt-y q))))
   
-  (trace-column callback min-x min-y max-y)
-  (trace-column callback max-x min-y max-y)
+  (trace-column apply-callback min-x min-y max-y)
+  (trace-column apply-callback max-x min-y max-y)
   
-  (trace-row callback min-y min-x max-x)
-  (trace-row callback max-y min-x max-x))
+  (trace-row apply-callback min-y min-x max-x)
+  (trace-row apply-callback max-y min-x max-x))
 
 ; (Integer Integer -> Void) Pt Pt -> Void 
 ; an implementation of Bresenham's line algorithm

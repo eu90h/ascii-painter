@@ -113,8 +113,8 @@
                        
                        (define (set-and-accumulate x y)
                          (when (good-xy? x y)
-                           (set! tiles-drawn (append tiles-drawn (list (list (send scene get x y) x y))))
-                           (send scene set x y tile)))
+                            (set! tiles-drawn (append tiles-drawn (list (list (send scene get x y) x y))))
+                            (send scene set x y tile)))
                        
                        (define (handle-left-down mouse-event)
                          (set! placing #t)
