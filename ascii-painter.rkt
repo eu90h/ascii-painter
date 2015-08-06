@@ -309,6 +309,7 @@
 (define cur-brush paint-brush)
 
 (define (switch-brush b)
+  (send canvas unselect-all)
   (set! cur-brush b)
   (send canvas set-brush b)
   (send cur-brush set-tile cur-tile)
