@@ -39,7 +39,7 @@
                         (define (remove-tile x y) 
                           (let ([p (send canvas clamp x y)]) 
                             (set! history (paint-scene history scene (pt-x p) (pt-y p) empty-tile)))
-                          (send canvas draw))
+                          (send canvas scene-draw))
                         
                         (define/public (handle mouse-event)
                           (when (eq? 'right-up (send mouse-event get-event-type))
