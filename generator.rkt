@@ -58,11 +58,12 @@
     (define number-field (new text-field% [label "Amount to add"] [parent vpanel]))
     
     (define (set-tile btn evt)
-      (let ([tiles (map choice->tile (send tile-choices get-selections))])
-        (let loop ([n (string->number (send number-field get-value))])
-          (place-random-tile tiles)
-          (unless (zero? n) (loop (sub1 n)))))
-      (send dialog show #f))
+      (if (null? (send tile-choices get-selections)) (send this process)
+        (let ([tiles (map choice->tile (send tile-choices get-selections))])
+          (let loop ([n (string->number (send number-field get-value))])
+            (place-random-tile tiles)
+            (unless (zero? n) (loop (sub1 n))))
+          (send dialog show #f))))
     
     (define ok-btn (new button% [label "OK"] [parent vpanel] [callback set-tile]))
     
