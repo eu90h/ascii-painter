@@ -3,10 +3,8 @@
 (provide main-canvas%)
 
 (require "ascii-canvas.rkt" racket/unsafe/ops "scene.rkt" "point.rkt" "util.rkt" "camera.rkt" "history.rkt" "brush.rkt")
-(require profile)
-(define unsafe-fxfloor (compose unsafe-fl->fx unsafe-flfloor unsafe-fx->fl))
 
-      
+(define unsafe-fxfloor (compose unsafe-fl->fx unsafe-flfloor unsafe-fx->fl))
 
 (define main-canvas% (class ascii-canvas%
                        (init-field
@@ -41,7 +39,6 @@
                        (define/public (set-scales x y) (set! x-scale x) (set! y-scale y))
                        (define/public (set-scene-dimensions w h) (set! scene-width w) (set! scene-height h))
 
-
                        (define/public (clamp mx my)
                          (pt (unsafe-fx+ (unsafe-pt-x camera-pos) 
                                          (unsafe-fxfloor (unsafe-fxquotient mx x-scale)))
@@ -70,13 +67,10 @@
                          (let ([p (send this clamp (send mouse-event get-x) (send mouse-event get-y))])
                            (when (pt-in-scene? p)
                              (let ([q (pt-sub p camera-pos)])
-                               ;  (unless (equal? q last-mouse-pt)
                                (draw-tile (send scene get (unsafe-fx+ (unsafe-pt-x camera-pos) (unsafe-pt-x last-mouse-pt)) 
                                                 (unsafe-fx+ (unsafe-pt-y camera-pos) (unsafe-pt-y last-mouse-pt)))
                                           (unsafe-pt-x last-mouse-pt) (unsafe-pt-y last-mouse-pt))
                                (draw-tile cur-tile (unsafe-pt-x q) (unsafe-pt-y q))
-                               ;(unless (null? last-selected-points) 
-                               ;  (unselect-tiles last-selected-points))
                                (set! last-mouse-pt q))
                              (send cur-brush handle mouse-event)
                              (set! history (history-add-actions history (send cur-brush get-history)))))
@@ -92,47 +86,21 @@
                            (send this write-tile x y tile)))
                        
                      (define/public (unselect-all)
-                      (let ([cx (unsafe-pt-x camera-pos)]
-                             [cy (unsafe-pt-y camera-pos)])
-                         (let loop ([ps last-selected-points])
-                           (unless (null? ps)
-                             (let* ([qx (unsafe-fx+ (unsafe-pt-x (unsafe-list-ref ps 0)) cx)]
-                                    [qy (unsafe-fx+ (unsafe-pt-y (unsafe-list-ref ps 0)) cy)]
-                                    [t (send scene get qx qy)])
-                               (send this write-tile qx qy t))
-                             (loop (unsafe-list-tail ps 1)))))
-                       (set! last-selected-points null))
+                      (send this scene-draw))
                        
                      (define/public (select x y)
-                    
                        (let* ([cx (unsafe-pt-x camera-pos)]
                               [cy (unsafe-pt-y camera-pos)]
                               [qx (unsafe-fx- x cx)]
                               [qy (unsafe-fx- y cy)])
                          (when (coords-in-canvas? qx qy)
-                           (set! last-selected-points (append last-selected-points (list (pt qx qy))))
                            (send this write-tile
                                  qx
                                  qy
                                  selection-tile))))
-                         
                         
                        (define/public (scene-draw)
                          (let ([cx (unsafe-pt-x camera-pos)] [cy (unsafe-pt-y camera-pos)])
                            (for* ([xi (in-range width)] [yi (in-range height)])
                              (send this draw-tile (send scene get (unsafe-fx+ cx xi) (unsafe-fx+ cy yi)) xi yi)))
                          (send container refresh))))
-
-(define (color? c) (and (object? c) (is-a? c color%)))
-(define (canvas? c) (and (object? c) (is-a? c canvas%)))
-(define (event? e) (and (object? e) (is-a? e event%)))
-(define (scene? e) (and (object? e) (is-a? e scene%)))
-(define tile/c (struct/c tile char? color? color? string?))
-(define pt/c (struct/c pt integer? integer?))
-;(define/contract main-canvas+c%
- ; (class/c [on-event (->m event? void?)]
-  ;  [clamp (->m natural-number/c natural-number/c pt/c)]
-  ;  [scene-draw (->m void?)]
-  ;  [draw-selected-tiles (->m list? void?)]
-  ;  [draw-tile (->m tile/c natural-number/c natural-number/c void?)])
- ; main-canvas%)

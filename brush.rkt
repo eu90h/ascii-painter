@@ -92,7 +92,6 @@
 
                        (field [tile empty-tile]
                               [history null]
-                              ;(selected-points null)
                               [placing #f]
                               [initial-pt (pt 0 0)]
                               [tiles-drawn null]
@@ -154,9 +153,7 @@
                                                      last-mouse-pt)))
                                (send canvas unselect-all)
                                (apply (find-selector shape) (build-selector-args mouse-event))
-                               (set! last-mouse-pt (pt (send mouse-event get-x) (send mouse-event get-y))))))
-                        
-                          
+                               (set! last-mouse-pt (pt (send mouse-event get-x) (send mouse-event get-y))))))   
          
                        (define (find-tracer s)
                          (case s
@@ -189,11 +186,9 @@
                        (define/public (get-name) "Shape")
                        (define/public (set-scene c) (set! scene c))
                        (define/public (set-canvas c) (set! canvas c))
-                     ;  (define/public (get-selected-points) selected-points)
                        (define/public (set-radius n) (set! radius n))
                        
                        (define/public (handle mouse-event)
-                      ;   (set! selected-points null)
                          (case (send mouse-event get-event-type)
                            [(left-down) (handle-left-down mouse-event)]
                            [(left-up) (handle-left-up mouse-event)]

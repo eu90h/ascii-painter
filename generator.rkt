@@ -23,10 +23,11 @@
     (define choice->tile ((curry list-ref) tiles))
     
     (define (set-tile btn evt)
-      (let* ([t (choice->tile (send tile-choices get-selection))]
-             [s (make-object scene% (send scene get-width) (send scene get-height) t)])
-        (set! new-scene s)
-        (send dialog show #f)))
+      (when (not (null? scene))
+        (let* ([t (choice->tile (send tile-choices get-selection))]
+               [s (make-object scene% (send scene get-width) (send scene get-height) t)])
+          (set! new-scene s)
+          (send dialog show #f))))
     
     (define ok-btn (new button% [label "OK"] [parent hpanel] [callback set-tile]))
     
