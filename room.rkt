@@ -2,7 +2,7 @@
 
 (provide (struct-out room) (struct-out path) is-interior-pt? is-wall-pt? room-intersects? room-distance)
 
-(require quickcheck math/base "point.rkt")
+(require math/base "point.rkt")
 
 (struct room (wall-pts interior-pts))
 (struct path (start end pts))
