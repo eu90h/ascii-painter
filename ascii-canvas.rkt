@@ -6,7 +6,8 @@
  racket/path
  racket/runtime-path
  racket/unsafe/ops
- "scene.rkt" "util.rkt")
+ "scene.rkt" "util.rkt"
+ "camera.rkt")
 
 (provide
  (all-defined-out))
@@ -230,34 +231,18 @@
     
     ; Map a function across the tiles
     ; Functions should be of the form: x y char fg bg => char fg bg
-    (define/public for-each-tile
-      (case-lambda
-       [(f)
-        (send this for-each-tile 0 0 width-in-characters height-in-characters f)]
-       [(x y width height f)
-        (unless (procedure? f)
-          (raise-argument-error 'for-each-tile "function?" f))
-        (unless (<= 0 x (- width-in-characters 1))
-          (raise-argument-error 'for-each-tile (format "x in the range [0, ~a)" width-in-characters) x))
-        (unless (<= 0 y (- height-in-characters 1))
-          (raise-argument-error 'for-each-tile (format "y in the range [0, ~a)" height-in-characters) y))
-        (unless (> 0 width)
-          (raise-argument-error 'for-each-tile (format "positive integer? for width" width-in-characters width)))
-        (unless (> 0 height)
-          (raise-argument-error 'for-each-tile (format "positive integer? for height" height-in-characters height)))
-        (unless (< (+ x width) width-in-characters)
-          (raise-argument-error 'for-each-tile (format "x+width in range [0, ~a)" width-in-characters (+ x width))))
-        (unless (< (+ y height) height-in-characters)
-          (raise-argument-error 'for-each-tile (format "y+height in range [0, ~a)" height-in-characters (+ y height))))
-        
-        (for* ([xi (in-range x (unsafe-fx+ x width))]
-               [yi (in-range y (unsafe-fx+ y height))])
-          (define-values (char fg bg)
-            (f xi yi (matrix-ref chars xi yi) (matrix-ref foreground-colors xi yi) (matrix-ref background-colors xi yi)))
-          (matrix-set! chars xi yi char)
-          (matrix-set! foreground-colors xi yi fg)
-          (matrix-set! background-colors xi yi bg))]))
-        
+    (define/public (for-each-tile scene cx cy)
+      (define w (unsafe-fx- width-in-characters 1))
+      (define h (unsafe-fx- height-in-characters 1))
+      (let loop ([xi 0] [yi 0])
+        (let ([tile (send scene get (unsafe-fx+ cx xi) (unsafe-fx+ cy yi))])
+          (matrix-set! chars xi yi (unsafe-tile-symbol tile))
+          (matrix-set! foreground-colors xi yi (unsafe-tile-fg tile))
+          (matrix-set! background-colors xi yi (unsafe-tile-bg tile)))
+        (if (unsafe-fx>= xi w)
+            (unless (unsafe-fx>= yi h)
+              (loop 0 (unsafe-fx+ 1 yi)))
+            (loop (unsafe-fx+ 1 xi) yi))))
     
     ; Validate that the width and height make sense
     (when (unsafe-fx<= width-in-characters 0) (raise-argument-error 'ascii-canvas% "positive integer" width-in-characters))

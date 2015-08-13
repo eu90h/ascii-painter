@@ -28,7 +28,8 @@
                        (field [last-mouse-pt (pt 0 0)])
                        (field [last-selected-points null])
                        (field [camera-pos (send camera get-position)])
-                       
+                       (field [update-camera? #f])
+                       (field [last-thread null])
 
                        (define/public (set-history h) (set! history h))
                        (define/public (get-history) history)
@@ -46,15 +47,28 @@
                                          (unsafe-fxfloor (unsafe-fxquotient my y-scale)))))
 
                        (define/override (on-char key-event)
+                         (unless (null? last-thread)
+                                        (kill-thread last-thread))
                          (case (send key-event get-key-code)
-                           [(menu release) (void)]
+                           [(menu) (void)]
+                           [(release) (set! camera-pos  (send camera get-position)) (send this scene-draw)]
                            [(escape) (let ([f (new dialog% [label "Quit?"])]) 
                                        (if (eq? 'yes (message-box "Exit" "Are you sure you want to exit?" f '(yes-no))) (exit) (void)) (send f show #f))]
                            [(#\z) (when (send key-event get-control-down) (set! history (undo-last-action history scene)) (send this scene-draw))]
-                           [(up #\w) (send camera move 0 -1) (set! camera-pos (send camera get-position)) (send this scene-draw)]
-                           [(left #\a) (send camera move -1 0) (set! camera-pos (send camera get-position)) (send this scene-draw)]
-                           [(down #\s) (send camera move 0 1) (set! camera-pos (send camera get-position)) (send this scene-draw)]
-                           [(right #\d) (send camera move 1 0)(set! camera-pos (send camera get-position)) (send this scene-draw)])
+                           ; this is so awful and hacky
+                           ; it was just so hard to get the scrolling to be responsive
+                           [(up #\w) (set! last-thread
+                                           (thread (thunk
+                                                    (send this scene-draw (send camera move 0 -1)))))]
+                           [(left #\a)  (set! last-thread
+                                           (thread (thunk
+                                                    (send this scene-draw (send camera move -1 0)))))]
+                           [(down #\s) (set! last-thread
+                                           (thread (thunk
+                                                    (send this scene-draw (send camera move 0 1)))))]
+                           [(right #\d) (set! last-thread
+                                           (thread (thunk
+                                                    (send this scene-draw (send camera move 1 0)))))])
                          this)
                        
                        (define (pt-in-scene? p)
@@ -66,6 +80,7 @@
                        (define/override (on-event mouse-event)
                          (let ([p (send this clamp (send mouse-event get-x) (send mouse-event get-y))])
                            (when (pt-in-scene? p)
+                             
                              (let ([q (pt-sub p camera-pos)])
                                (draw-tile (send scene get (unsafe-fx+ (unsafe-pt-x camera-pos) (unsafe-pt-x last-mouse-pt)) 
                                                 (unsafe-fx+ (unsafe-pt-y camera-pos) (unsafe-pt-y last-mouse-pt)))
@@ -102,9 +117,8 @@
                                  qx
                                  qy
                                  selection-tile))))
-                        
-                       (define/public (scene-draw)
-                         (let ([cx (unsafe-pt-x camera-pos)] [cy (unsafe-pt-y camera-pos)])
-                           (for* ([xi (in-range width)] [yi (in-range height)])
-                             (send this draw-tile (send scene get (unsafe-fx+ cx xi) (unsafe-fx+ cy yi)) xi yi)))
+                       
+                       (define/public (scene-draw [camera-pos camera-pos])
+                         (set! camera-pos (send camera get-position))
+                         (send this for-each-tile scene (unsafe-pt-x camera-pos) (unsafe-pt-y camera-pos))
                          (send container refresh))))
