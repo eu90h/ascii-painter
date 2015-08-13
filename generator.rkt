@@ -14,7 +14,13 @@
     
     (define/public (get-scene) new-scene)
     
-    (define dialog (new dialog% [label "Choose a tile"]))
+    (define dialog (new (class dialog% (init label)
+                          (super-new [label label])
+                          (define/override (on-subwindow-char receiver event)
+                            (if (equal? #\return (send event get-key-code))
+                                (set-tile ok-btn event)
+                                #f)))
+                          [label "Choose a tile"]))
     (define hpanel (new horizontal-panel% [parent dialog]))
     
     (define tile-choices
@@ -46,7 +52,13 @@
             (sub1 (random (send scene get-height)))
             (random-element tiles)))
     
-    (define dialog (new dialog% [label "Choose a tile"]))
+    (define dialog (new (class dialog% (init label)
+                          (super-new [label label])
+                          (define/override (on-subwindow-char receiver event)
+                            (if (equal? #\return (send event get-key-code))
+                                (set-tile ok-btn event)
+                                #f)))
+                        [label "Choose a tile"]))
     (define hpanel (new horizontal-panel% [parent dialog]))
     (define tile-choices 
       (new list-box% [label ""] [parent hpanel] [choices (map tile-descr tiles)] 
