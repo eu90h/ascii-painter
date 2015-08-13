@@ -64,7 +64,10 @@
                            [(left #\a)  (set! last-thread
                                            (thread (thunk
                                                     (send this scene-draw (send camera move -1 0)))))]
-                           [(down #\s) (if (send key-event get-control-down)
+                           [(down) (set! last-thread
+                                         (thread (thunk
+                                                  (send this scene-draw (send camera move 0 1)))))]
+                           [(#\s) (if (send key-event get-control-down)
                                            (save-tile container key-event)
                                            (set! last-thread
                                                  (thread (thunk
