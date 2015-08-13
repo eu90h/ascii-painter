@@ -11,21 +11,21 @@ Binaries
 --------
 OS X - [ascii-painter.dmg](https://www.dropbox.com/s/px6q44qe999gfa0/ascii-painter.dmg?dl=0)
 
-Windows - [ascii-painter.zip](https://www.dropbox.com/s/632azukuzxyfc4t/ascii-painter.zip?dl=0)
+Windows - [ascii-painter.zip](https://www.dropbox.com/s/vqsc4g9bon7jwn2/windows-ascii-painter.zip?dl=0)
 
 Screenshots
 -----------
-A little example
+Some ascii folk singing a tune near a bonfire
+
+![Bonfire](https://i.imgur.com/FOaNcTi.png)
+
+An old example
 
 ![Example Map](https://i.imgur.com/U4cHvWG.png)
 
 A castle map
 
 ![Beginnings of a Castle Map](https://i.imgur.com/6c4psVj.png)
-
-All the various shapes:
-
-![Shape Gallery](https://i.imgur.com/7CeFGMN.png)
 
 Picking a color:
 
