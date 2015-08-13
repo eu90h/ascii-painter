@@ -148,9 +148,43 @@
 
 (define canvas-left-panel (new vertical-panel% [parent canvas-panel]))
 
+(define save-tile-btn-callback (thunk*
+                                (define dialog (new (class dialog% (init label)
+                                                      (super-new [label label])
+                                                      (define/override (on-subwindow-char receiver event)
+                                                        (case (send event get-key-code)
+                                                          [(#\return)
+                                                            (save-tile)]
+                                                          [(escape) (send this show #f)
+                                                                    (send frame focus)]
+                                                          [else #f])))
+                                                    [label "Save Tile"]))
+                                (define hpanel (new horizontal-panel% [parent dialog]))
+                                (define name-field (new text-field% [label "Enter a tile name"] [parent hpanel]))
+                                
+                                (define save-tile (thunk*
+                                                   (cond [(eq? "" (send name-field get-value)) 
+                                                          (let ([d (new dialog% [label "Error"])])
+                                                            (message-box "Error" "The tile must have a name" d '(ok))
+                                                            (send d show #f))]
+                                                         [(list? (member (send name-field get-value) (map tile-descr tiles))) 
+                                                          (let ([d (new dialog% [label "Error"])])
+                                                            (message-box "Error" "A tile with that name is already saved" d '(ok))
+                                                            (send d show #f))]
+                                                         [else 
+                                                          (let* ([name (send name-field get-value)] [t (tile (tile-symbol cur-tile) (tile-fg cur-tile) (tile-bg cur-tile) name)])
+                                                            (set! tiles (append tiles (list t)))
+                                                            (send tile-choices append name)
+                                                            (send tile-choices set-selection (sub1 (length tiles)))
+                                                            (send dialog show #f))])
+                                                   (send frame focus)))
+                                (define ok-btn (new button% [label "OK"] [parent hpanel] [callback save-tile]))
+                                (send dialog show #t)))
+
 (define symbol-canvas (new symbol-canvas%
                            [container canvas-left-panel]
                            [scene scene]
+                           [save-tile save-tile-btn-callback]
                            [set-tile-callback (lambda (t offset)
                                                 (set-cur-tile t)
                                                 (set! cur-tile-table-offset offset))]))
@@ -254,39 +288,6 @@
                           [choices (map tile-descr tiles)]
                           [callback tile-choices-callback]))
 
-(define save-tile-btn-callback (thunk*
-                                (define dialog (new (class dialog% (init label)
-                                                      (super-new [label label])
-                                                      (define/override (on-subwindow-char receiver event)
-                                                        (case (send event get-key-code)
-                                                          [(#\return)
-                                                            (save-tile)]
-                                                          [(escape) (send this show #f)
-                                                                    (send frame focus)]
-                                                          [else #f])))
-                                                    [label "Save Tile"]))
-                                (define hpanel (new horizontal-panel% [parent dialog]))
-                                (define name-field (new text-field% [label "Enter a tile name"] [parent hpanel]))
-                                
-                                (define save-tile (thunk*
-                                                   (cond [(eq? "" (send name-field get-value)) 
-                                                          (let ([d (new dialog% [label "Error"])])
-                                                            (message-box "Error" "The tile must have a name" d '(ok))
-                                                            (send d show #f))]
-                                                         [(list? (member (send name-field get-value) (map tile-descr tiles))) 
-                                                          (let ([d (new dialog% [label "Error"])])
-                                                            (message-box "Error" "A tile with that name is already saved" d '(ok))
-                                                            (send d show #f))]
-                                                         [else 
-                                                          (let* ([name (send name-field get-value)] [t (tile (tile-symbol cur-tile) (tile-fg cur-tile) (tile-bg cur-tile) name)])
-                                                            (set! tiles (append tiles (list t)))
-                                                            (send tile-choices append name)
-                                                            (send tile-choices set-selection (sub1 (length tiles)))
-                                                            (send dialog show #f))])
-                                                   (send frame focus)))
-                                (define ok-btn (new button% [label "OK"] [parent hpanel] [callback save-tile]))
-                                (send dialog show #t)))
-
 (define save-tile-btn (new button% [parent tile-library-panel] [label "Save Current Tile"]
   [callback save-tile-btn-callback]))
 
@@ -378,7 +379,7 @@
   (send symbol-canvas draw)
   
   (send frame show #t)
-  (send frame focus)
+  (send canvas focus)
   
   (send canvas set-scales (/ (send canvas get-width) canvas-width) (/ (send canvas get-height) canvas-height))
   (send canvas scene-draw))

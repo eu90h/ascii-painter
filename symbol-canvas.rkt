@@ -6,7 +6,7 @@
 
 (define symbol-canvas% (class ascii-canvas%
   ; Frame% Scene% (Tile Pair -> Any)
-  (init-field container scene set-tile-callback)
+  (init-field container scene save-tile set-tile-callback)
   ; container is a parent in which the canvas is placed.
   ; set-tile-callback is a function taking a tile and a pair of two integers representing 
   ; the table offset (see cur-tile-table-offset)
@@ -96,6 +96,11 @@
       (set! cur-tile (symbol-table-lookup (pt-x p) (pt-y p)))
       (set-tile-callback cur-tile cur-tile-table-offset))))
 
+  ; Evt -> Void
+                         (define/override (on-char event)
+                           (when (and (send event get-control-down)
+                                      (equal? #\s (send event get-key-code)))
+                             (save-tile container event)))
   ; Void -> Void
   (define/public (draw)
     (draw-symbol-table) 
