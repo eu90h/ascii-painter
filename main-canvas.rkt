@@ -14,7 +14,8 @@
                         scene
                         camera
                         cur-tile
-                        history)
+                        history
+                        save-tile)
                        
                        (super-new [parent container]
                                   [width-in-characters width]
@@ -63,9 +64,11 @@
                            [(left #\a)  (set! last-thread
                                            (thread (thunk
                                                     (send this scene-draw (send camera move -1 0)))))]
-                           [(down #\s) (set! last-thread
-                                           (thread (thunk
-                                                    (send this scene-draw (send camera move 0 1)))))]
+                           [(down #\s) (if (send key-event get-control-down)
+                                           (save-tile container key-event)
+                                           (set! last-thread
+                                                 (thread (thunk
+                                                          (send this scene-draw (send camera move 0 1))))))]
                            [(right #\d) (set! last-thread
                                            (thread (thunk
                                                     (send this scene-draw (send camera move 1 0)))))])

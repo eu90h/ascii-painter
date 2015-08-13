@@ -17,9 +17,10 @@
     (define dialog (new (class dialog% (init label)
                           (super-new [label label])
                           (define/override (on-subwindow-char receiver event)
-                            (if (equal? #\return (send event get-key-code))
-                                (set-tile ok-btn event)
-                                #f)))
+                            (case (send event get-key-code)
+                              [(#\return) (set-tile ok-btn event)]
+                              [(escape) (send this show #f)]
+                              [else #f])))
                           [label "Choose a tile"]))
     (define hpanel (new horizontal-panel% [parent dialog]))
     
@@ -55,9 +56,10 @@
     (define dialog (new (class dialog% (init label)
                           (super-new [label label])
                           (define/override (on-subwindow-char receiver event)
-                            (if (equal? #\return (send event get-key-code))
-                                (set-tile ok-btn event)
-                                #f)))
+                            (case (send event get-key-code)
+                              [(#\return) (set-tile ok-btn event)]
+                              [(escape) (send this show #f)]
+                              [else #f])))
                         [label "Choose a tile"]))
     (define hpanel (new horizontal-panel% [parent dialog]))
     (define tile-choices 

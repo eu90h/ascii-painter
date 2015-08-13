@@ -59,7 +59,8 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define frame (new frame% [label title] [style '(no-resize-border)]))
+(define frame (new frame%
+                   [label title] [style '(no-resize-border)]))
 (define brush-hpanel (new horizontal-panel% [parent frame]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -154,14 +155,6 @@
                                                 (set-cur-tile t)
                                                 (set! cur-tile-table-offset offset))]))
 
-(define canvas (new main-canvas%
-                    [container canvas-panel]
-                    [width canvas-width]
-                    [height canvas-height]
-                    [scene scene]
-                    [camera camera]
-                    [cur-tile cur-tile]
-                    [history history]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -265,9 +258,12 @@
                                 (define dialog (new (class dialog% (init label)
                                                       (super-new [label label])
                                                       (define/override (on-subwindow-char receiver event)
-                                                        (if (equal? #\return (send event get-key-code))
-                                                            (save-tile)
-                                                            #f)))
+                                                        (case (send event get-key-code)
+                                                          [(#\return)
+                                                            (save-tile)]
+                                                          [(escape) (send this show #f)
+                                                                    (send frame focus)]
+                                                          [else #f])))
                                                     [label "Save Tile"]))
                                 (define hpanel (new horizontal-panel% [parent dialog]))
                                 (define name-field (new text-field% [label "Enter a tile name"] [parent hpanel]))
@@ -311,6 +307,15 @@
     (if (is-a? c color%) c default-color)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define canvas (new main-canvas%
+                    [container canvas-panel]
+                    [width canvas-width]
+                    [height canvas-height]
+                    [scene scene]
+                    [camera camera]
+                    [cur-tile cur-tile]
+                    [history history]
+                    [save-tile save-tile-btn-callback]))
 
 (define paint-brush (new paint-brush% [canvas canvas] [scene scene]))
 (define single-brush (new single-brush% [canvas canvas] [scene scene]))
