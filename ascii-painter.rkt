@@ -260,7 +260,13 @@
                           [callback tile-choices-callback]))
 
 (define save-tile-btn-callback (thunk*
-                                (define dialog (new dialog% [label "Save Tile"]))
+                                (define dialog (new (class dialog% (init label)
+                                                      (super-new [label label])
+                                                      (define/override (on-subwindow-char receiver event)
+                                                        (if (equal? #\return (send event get-key-code))
+                                                            (save-tile)
+                                                            #f)))
+                                                    [label "Save Tile"]))
                                 (define hpanel (new horizontal-panel% [parent dialog]))
                                 (define name-field (new text-field% [label "Enter a tile name"] [parent hpanel]))
                                 
