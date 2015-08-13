@@ -184,7 +184,8 @@
   (let ([fill-generator (make-object fill-generator% scene canvas tiles)])
     (send fill-generator process)
     (when (not (null? (send fill-generator get-scene))) 
-      (change-scene (send fill-generator get-scene)))))
+      (change-scene (send fill-generator get-scene))
+      (send frame focus))))
 
 (define fill-generator-menu (new menu-item%
                                  (label "Fill")
@@ -194,7 +195,8 @@
 (define (uniform-random-fill-generator-callback menu evt)
   (let ([gen (make-object uniform-random-fill-generator% scene canvas tiles 10)])
     (send gen process)
-    (send canvas scene-draw)))
+    (send canvas scene-draw)
+    (send frame focus)))
 
 (define uniform-random-fill-generator-menu (new menu-item% (label "Randomly Place") (parent generator-menu) (callback uniform-random-fill-generator-callback)))
 
@@ -284,7 +286,8 @@
                                                             (set! tiles (append tiles (list t)))
                                                             (send tile-choices append name)
                                                             (send tile-choices set-selection (sub1 (length tiles)))
-                                                            (send dialog show #f))])))
+                                                            (send dialog show #f))])
+                                                   (send frame focus)))
                                 (define ok-btn (new button% [label "OK"] [parent hpanel] [callback save-tile]))
                                 (send dialog show #t)))
 
@@ -370,6 +373,7 @@
   (send symbol-canvas draw)
   
   (send frame show #t)
+  (send frame focus)
   
   (send canvas set-scales (/ (send canvas get-width) canvas-width) (/ (send canvas get-height) canvas-height))
   (send canvas scene-draw))
