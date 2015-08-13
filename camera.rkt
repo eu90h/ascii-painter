@@ -2,7 +2,7 @@
 
 (provide camera%)
 
-(require "point.rkt")
+(require "point.rkt" racket/unsafe/ops)
 
 ; a camera object represents the location of a camera within a scene being painted on a given canvas.
 (define camera% (class object%
@@ -15,8 +15,10 @@
                   ; returns true if the rectangle formed by the given point p and 
                   ; the point p + (canvas-width, canvas-height) lies within a given scene
                   (define (valid-pos? p)
-                    (and (>= (pt-x p) 0) (>= (pt-y p) 0) 
-                         (< (+ canvas-width (pt-x p)) scene-width) (< (+ canvas-height (pt-y p)) scene-height)))
+                    (and (unsafe-fx>= (unsafe-pt-x p) 0)
+                         (unsafe-fx>= (unsafe-pt-y p) 0) 
+                         (unsafe-fx< (unsafe-fx+ canvas-width (unsafe-pt-x p)) scene-width)
+                         (unsafe-fx< (unsafe-fx+ canvas-height (unsafe-pt-y p)) scene-height)))
 
                   ; Pt -> Pt
                   ; Adds p to the current camera position if p + camera-position is a valid-pos?
