@@ -21,9 +21,9 @@ An old example
 
 ![Example Map](https://i.imgur.com/U4cHvWG.png)
 
-A castle map
+A World Map
 
-![Beginnings of a Castle Map](https://i.imgur.com/6c4psVj.png)
+![World Map](https://i.imgur.com/NunOIhN.png)
 
 Picking a color:
 
