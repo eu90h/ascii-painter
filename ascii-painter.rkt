@@ -316,11 +316,13 @@
                     [camera camera]
                     [cur-tile cur-tile]
                     [history history]
-                    [save-tile save-tile-btn-callback]))
+                    [save-tile save-tile-btn-callback]
+                    [set-tile-callback set-cur-tile]))
 
 (define paint-brush (new paint-brush% [canvas canvas] [scene scene]))
 (define single-brush (new single-brush% [canvas canvas] [scene scene]))
 (define shape-brush (new shape-brush% [canvas canvas] [scene scene]))
+(define select-brush (new select-brush% [canvas canvas] [scene scene]))
 (define brushes (list paint-brush single-brush shape-brush))
 (define cur-brush paint-brush)
 
@@ -337,7 +339,8 @@
 
 (define brush-single-btn (new button% [label "Single"] [parent brush-hpanel] 
                               [callback (thunk* (switch-brush single-brush))]))
-
+(define brush-select-btn (new button% [label "Select"] [parent brush-hpanel] 
+                              [callback (thunk* (switch-brush select-brush))]))
 (define (shape-choice-callback btn evt)
   (switch-brush shape-brush)
   (define shape (send shape-choice get-string (send shape-choice get-selection)))

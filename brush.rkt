@@ -1,7 +1,7 @@
 #lang racket
 
 (provide paint-brush% single-brush%  
-  brush-interface brush-with-selection-interface shape-brush%)
+  brush-interface brush-with-selection-interface shape-brush% select-brush%)
 
 (require "scene.rkt" "util.rkt" "point.rkt" "history.rkt" racket/performance-hint racket/unsafe/ops)
 
@@ -190,3 +190,29 @@
                            [(left-down) (handle-left-down mouse-event)]
                            [(left-up) (handle-left-up mouse-event)]
                            [else (handle-select mouse-event)]))))
+
+(define select-brush% (class* object% (brush-with-selection-interface)
+                        (init-field canvas scene)
+                        
+                        (field [history null]
+                               [tile empty-tile]
+                               [selected-points null] 
+                               [width (send scene get-width)]
+                               [height (send scene get-height)]
+                               [selected-pt null])
+                        
+                        (super-new)
+                        
+                        (define/public (set-history h) (set! history h))
+                        (define/public (get-history) (let ([h history]) (begin (set! history null) h)))
+                        (define/public (get-name) "Select")
+                        (define/public (set-scene c) (set! scene c))
+                        (define/public (set-tile t) (set! tile t))
+                        (define/public (set-canvas c) (set! canvas c))
+                        (define/public (get-selected-points) selected-points)
+                        (define/public (get-selected-pt) selected-pt)
+                        (begin-encourage-inline (define (good-xy? x y)
+                                                  (and (unsafe-fx>= y 0) (unsafe-fx>= x 0) (unsafe-fx< x width) (unsafe-fx< y height))))
+
+                        (define/public (handle mouse-event)
+                          #f)))

@@ -15,7 +15,8 @@
                         camera
                         cur-tile
                         history
-                        save-tile)
+                        save-tile
+                        set-tile-callback)
                        
                        (super-new [parent container]
                                   [width-in-characters width]
@@ -88,12 +89,19 @@
                            (when (pt-in-scene? p)
                              
                              (let ([q (pt-sub p camera-pos)])
-                               (draw-tile (send scene get (unsafe-fx+ (unsafe-pt-x camera-pos) (unsafe-pt-x last-mouse-pt)) 
-                                                (unsafe-fx+ (unsafe-pt-y camera-pos) (unsafe-pt-y last-mouse-pt)))
-                                          (unsafe-pt-x last-mouse-pt) (unsafe-pt-y last-mouse-pt))
-                               (draw-tile cur-tile (unsafe-pt-x q) (unsafe-pt-y q))
-                               (set! last-mouse-pt q))
-                             (send cur-brush handle mouse-event)
+                               (unless (equal? (send cur-brush get-name) "Select")
+                                 (draw-tile (send scene get (unsafe-fx+ (unsafe-pt-x camera-pos) (unsafe-pt-x last-mouse-pt)) 
+                                                  (unsafe-fx+ (unsafe-pt-y camera-pos) (unsafe-pt-y last-mouse-pt)))
+                                            (unsafe-pt-x last-mouse-pt) (unsafe-pt-y last-mouse-pt))
+                                 (draw-tile cur-tile (unsafe-pt-x q) (unsafe-pt-y q))
+                                 (set! last-mouse-pt q)))
+                             (if (equal? (send cur-brush get-name) "Select")
+                                 (when (eq? (send mouse-event get-event-type) 'left-up)
+                                   (let* ([m (send this clamp (send mouse-event get-x) (send mouse-event get-y))]
+                                          [mx (unsafe-pt-x m)]
+                                         [my (unsafe-pt-y m)])
+                                       (set-tile-callback (send scene get mx my))))
+                                 (send cur-brush handle mouse-event))
                              (set! history (history-add-actions history (send cur-brush get-history)))))
                          (send container refresh))
                        
