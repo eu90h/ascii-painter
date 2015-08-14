@@ -36,7 +36,8 @@ Finally, no Lisp program is complete without Lambdas!
 Usage
 -----
 The default map is 100x60. To change the dimensions, click File->New Map.
-The camera is controlled with the arrow keys.
+
+The camera is controlled with the arrow keys. Undo is `ctrl-z`, and `ctrl-s` saves the current tile to the tile library.
 
 Features
 --------
