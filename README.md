@@ -9,7 +9,7 @@ This tool would be good for creating static city/town levels for instance.
 
 Binaries
 --------
-Windows & OS X binaries are in the (releases)[https://github.com/eu90h/ascii-painter/releases] section.
+Windows & OS X binaries are in the [releases](https://github.com/eu90h/ascii-painter/releases) section.
 
 Screenshots
 -----------
