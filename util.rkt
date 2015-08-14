@@ -98,8 +98,8 @@
   (define min-x (unsafe-fxmin (unsafe-pt-x p) (unsafe-pt-x q)))
   (define min-y (unsafe-fxmin (unsafe-pt-y p) (unsafe-pt-y q)))
   
-  (define max-x (unsafe-fx+ 1 (unsafe-fxmax (unsafe-pt-x p) (unsafe-pt-x q))))
-  (define max-y (unsafe-fx+ 1 (unsafe-fxmax (unsafe-pt-y p) (unsafe-pt-y q))))
+  (define max-x (unsafe-fxmax (unsafe-pt-x p) (unsafe-pt-x q)))
+  (define max-y  (unsafe-fxmax (unsafe-pt-y p) (unsafe-pt-y q)))
   
   (trace-column apply-callback min-x min-y max-y)
   (trace-column apply-callback max-x min-y max-y)
