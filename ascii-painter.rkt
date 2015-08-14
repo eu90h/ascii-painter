@@ -17,6 +17,7 @@
 
 (define history null)
 (define rooms null)
+(define cur-brush-btn null)
 
 (define fg-color (make-object color% 255 255 255 1.0))
 (define bg-color (make-object color% 0 0 0 1.0))
@@ -318,7 +319,17 @@
 (define brushes (list paint-brush single-brush shape-brush))
 (define cur-brush paint-brush)
 
-(define (switch-brush b)
+(define (switch-brush b btn)
+  (if (is-a? btn choice%)
+      (begin
+        (send cur-brush-btn set-label (send cur-brush get-name))
+        (set! cur-brush-btn btn))
+      (begin
+        (unless (or (is-a? cur-brush-btn choice%) (null? cur-brush-btn))
+          (send cur-brush-btn set-label (send cur-brush get-name)))
+        (set! cur-brush-btn btn)
+        (send btn set-label (string-append "* " (send b get-name) " *"))))
+          
   (send canvas unselect-all)
   (set! cur-brush b)
   (send canvas set-brush b)
@@ -327,14 +338,14 @@
                                     (false? (member (send cur-brush get-shape) (list "line" "filled-rectangle" "rectangle"))))))
 
 (define brush-paint-btn (new button% [label (send paint-brush get-name)] [parent brush-hpanel] 
-                             [callback (thunk* (switch-brush paint-brush))]))
+                             [callback (thunk* (switch-brush paint-brush brush-paint-btn))]))
 
 (define brush-single-btn (new button% [label "Single"] [parent brush-hpanel] 
-                              [callback (thunk* (switch-brush single-brush))]))
+                              [callback (thunk* (switch-brush single-brush brush-single-btn))]))
 (define brush-select-btn (new button% [label "Select"] [parent brush-hpanel] 
-                              [callback (thunk* (switch-brush select-brush))]))
+                              [callback (thunk* (switch-brush select-brush brush-select-btn))]))
 (define (shape-choice-callback btn evt)
-  (switch-brush shape-brush)
+  (switch-brush shape-brush shape-choice)
   (define shape (send shape-choice get-string (send shape-choice get-selection)))
   (send shape-brush set-shape shape)
   (send shape-size-slider show (and (eq? cur-brush shape-brush)
@@ -358,7 +369,7 @@
 (define (initialize)
   (send shape-size-slider show #f)
   
-  (switch-brush paint-brush)
+  (switch-brush paint-brush brush-paint-btn)
   
   (send tile-fg-canvas min-height 50)
   (send tile-bg-canvas min-height 50)
