@@ -73,7 +73,6 @@
                          (let ([p (send canvas clamp x y)])
                            (when (good-xy? (pt-x p) (pt-y p))
                              (set! history (paint-scene history scene canvas (pt-x p) (pt-y p) tile)))))
-                             ;(send canvas draw-tile tile (pt-x p) (pt-y p)))))
                        
                        (define/public (handle mouse-event)
                          (when drawing (change-tile (send mouse-event get-x) (send mouse-event get-y)))
@@ -190,7 +189,7 @@
                            [(left-down) (handle-left-down mouse-event)]
                            [(left-up) (handle-left-up mouse-event)]
                            [else (handle-select mouse-event)]))))
-
+; this sucks - the only method used is get-name
 (define select-brush% (class* object% (brush-with-selection-interface)
                         (init-field canvas scene)
                         
