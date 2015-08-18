@@ -141,7 +141,7 @@
         (set! offscreen-buffer (make-screen-bitmap (get-width) (get-height)))
         (set! offscreen-buffer-dc (new bitmap-dc% [bitmap offscreen-buffer])))
       ;(redraw-all self dc))
-      (if (null? dirty-tiles) (redraw-all self dc)
+      (if (or draw-all? (null? dirty-tiles)) (redraw-all self dc)
          (begin
            (for ([dirty-tile (in-list dirty-tiles)])
               (do-paint self dc (first dirty-tile) (second dirty-tile)))
@@ -190,7 +190,8 @@
                         (not (color-equal? (matrix-ref background-colors x y) (matrix-ref old-background-colors x y)))
                         (not (color-equal? (matrix-ref foreground-colors x y) (matrix-ref old-foreground-colors x y)))))
         (do-paint self dc x y))
-      (send dc draw-bitmap offscreen-buffer 0 0))
+      (send dc draw-bitmap offscreen-buffer 0 0)
+      (set! draw-all? #f))
     
     ; Clear the screen
     (define/public clear
@@ -299,7 +300,8 @@
          (if (unsafe-fx>= xi w)
             (unless (unsafe-fx>= yi h)
               (loop 0 (unsafe-fx+ 1 yi)))
-            (loop (unsafe-fx+ 1 xi) yi))))
+            (loop (unsafe-fx+ 1 xi) yi)))
+     (set! draw-all? #t))
     
     ; Validate that the width and height make sense
     (when (<= width-in-characters 0) (raise-argument-error 'ascii-canvas% "positive integer" width-in-characters))
