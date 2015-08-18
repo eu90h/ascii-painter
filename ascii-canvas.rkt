@@ -5,21 +5,18 @@
  racket/gui
  racket/path
  racket/runtime-path
- racket/unsafe/ops
- "scene.rkt" "util.rkt"
- "camera.rkt")
+ "util.rkt"
+ "scene.rkt"
+ racket/unsafe/ops)
 
 (provide
  (all-defined-out))
 
-(define-runtime-path RUNTIME_DIR "./")
+(define-runtime-path RUNTIME_DIR ".")
 (define-syntax-rule (scope body* ...) (let () body* ...))
   
 ; A simple matrix ADT
 (define-struct matrix (width height data) #:mutable #:constructor-name make-matrix-struct)
-(define (unsafe-matrix-width m) (unsafe-struct-ref m 0))
-(define (unsafe-matrix-height m) (unsafe-struct-ref m 1))
-(define (unsafe-matrix-data m) (unsafe-struct-ref m 2))
 
 (define (make-matrix width height [gen (lambda (x y) #f)]) 
   (make-matrix-struct width height
@@ -27,10 +24,18 @@
       (gen (quotient i height) (remainder i height)))))
 
 (define (matrix-ref matrix x y) 
-  (unsafe-vector-ref (unsafe-matrix-data matrix) (unsafe-fx+ y (unsafe-fx* x (unsafe-matrix-height matrix)))))
+  (unless (< -1 x (matrix-width matrix)) 
+    (raise-argument-error 'matrix-ref (format "integer in range [0, ~a]" (- (matrix-width matrix) 1)) x))
+  (unless (< -1 y (matrix-height matrix)) 
+    (raise-argument-error 'matrix-ref (format "integer in range [0, ~a]" (- (matrix-height matrix) 1)) y))
+  (vector-ref (matrix-data matrix) (+ y (* x (matrix-height matrix)))))
 
 (define (matrix-set! matrix x y val) 
-  (unsafe-vector-set! (unsafe-matrix-data matrix) (unsafe-fx+ y (unsafe-fx* x (unsafe-matrix-height matrix))) val))
+  (unless (< -1 x (matrix-width matrix)) 
+    (raise-argument-error 'matrix-ref (format "integer in range [0, ~a]" (- (matrix-width matrix) 1)) x))
+  (unless (< -1 y (matrix-height matrix)) 
+    (raise-argument-error 'matrix-ref (format "integer in range [0, ~a]" (- (matrix-height matrix) 1)) y))
+  (vector-set! (matrix-data matrix) (+ y (* x (matrix-height matrix))) val))
 
 ; Convert a color name, list of rgb/rgba, vector of rgb/rgba or multiple arguments to a color
 (define ->color
@@ -65,8 +70,8 @@
      [offscreen-buffer-dc #f]
      [char-width 9]
      [char-height 16]
-     [default-background-color (make-object color% 0 0 0)]
-     [default-foreground-color (make-object color% 255 255 255)]
+     [default-background-color "black"]
+     [default-foreground-color "white"]
      [cursor-x 0]
      [cursor-y 0]
      [glyphs #f]
@@ -127,78 +132,120 @@
                 (and (or (= argc 3) (= argc 4)) (not (andmap byte? args))))
         (raise-argument-error 'set-default-foreground-color "color name or rgb (as bytes) or rgba (as bytes)" args))
       (set! default-foreground-color (apply make-object (cons color% args))))
+    (field [dirty-tiles null] [all-pts null] [draw-all? #f] [my-dc null] [my-self null])
     
     ; Repaint the canvas
+    
     (define/private (my-paint-callback self dc)
-      ; If the buffer hasn't been defined, do that
       (unless offscreen-buffer
         (set! offscreen-buffer (make-screen-bitmap (get-width) (get-height)))
         (set! offscreen-buffer-dc (new bitmap-dc% [bitmap offscreen-buffer])))
+      ;(redraw-all self dc))
+      (if (null? dirty-tiles) (redraw-all self dc)
+         (begin
+           (for ([dirty-tile (in-list dirty-tiles)])
+              (do-paint self dc (first dirty-tile) (second dirty-tile)))
+              (send dc draw-bitmap offscreen-buffer 0 0)
+              (set! dirty-tiles null))))
+ (define (do-paint self dc x y)
+   (define src-c (char->integer (matrix-ref chars x y)))
+      (define src-x (unsafe-fxremainder src-c 16))
+      (define src-y (unsafe-fxquotient src-c 16))
       
+      ; Draw the foreground 
+      ; NOTE: Not a mistake. Yes, it is weird.
+      (send offscreen-buffer-dc set-brush (new brush% [color (matrix-ref foreground-colors x y)]))
+      (send offscreen-buffer-dc draw-rectangle
+                (unsafe-fx* x char-width)
+                (unsafe-fx* y char-height)
+                char-width
+                char-height)
+      
+      ; Overlay the background
+      ; NOTE: Not a mistake. Yes, it is weird.
+      (send offscreen-buffer-dc draw-bitmap-section
+                glyphs
+                (unsafe-fx* x char-width)
+                (unsafe-fx* y char-height)
+                (unsafe-fx* src-x char-width)
+                (unsafe-fx* src-y char-height)
+                char-width
+                char-height
+                'solid ; could be solid, opaque, or xor
+                (matrix-ref background-colors x y)
+                glyphs)
+      
+      ; Update maps
+      (matrix-set! old-chars x y (matrix-ref chars x y))
+      (matrix-set! old-background-colors x y (matrix-ref background-colors x y))
+      (matrix-set! old-foreground-colors x y (matrix-ref foreground-colors x y))
+      
+      ; Finally, flip the buffers
+        )
+    (define (redraw-all self dc)
       ; Draw any new characters to the buffer
       (for* ([x (in-range width-in-characters)]
              [y (in-range height-in-characters)]
              #:when (or (not (eq? (matrix-ref chars x y) (matrix-ref old-chars x y)))
                         (not (color-equal? (matrix-ref background-colors x y) (matrix-ref old-background-colors x y)))
                         (not (color-equal? (matrix-ref foreground-colors x y) (matrix-ref old-foreground-colors x y)))))
-        ; Draw the glyph to the buffer
-        (define src-c (char->integer (matrix-ref chars x y)))
-        (define src-x (unsafe-fxremainder src-c 16))
-        (define src-y (unsafe-fxquotient src-c 16))
-        
-        ; Draw the foreground 
-        ; NOTE: Not a mistake. Yes, it is weird.
-        (send offscreen-buffer-dc set-brush (new brush% [color (matrix-ref foreground-colors x y)]))
-        (send offscreen-buffer-dc draw-rectangle
-              (unsafe-fx* x char-width)
-              (unsafe-fx* y char-height)
-              char-width
-              char-height)
-        
-        ; Overlay the background
-        ; NOTE: Not a mistake. Yes, it is weird.
-        (send offscreen-buffer-dc draw-bitmap-section
-              glyphs
-              (unsafe-fx* x char-width)
-              (unsafe-fx* y char-height)
-              (unsafe-fx* src-x char-width)
-              (unsafe-fx* src-y char-height)
-              char-width
-              char-height
-              'solid ; could be solid, opaque, or xor
-              (matrix-ref background-colors x y)
-              glyphs)
-        
-        ; Update maps
-        (matrix-set! old-chars x y (matrix-ref chars x y))
-        (matrix-set! old-background-colors x y (matrix-ref background-colors x y))
-        (matrix-set! old-foreground-colors x y (matrix-ref foreground-colors x y)))
-      
-      ; Finally, flip the buffers
+        (do-paint self dc x y))
       (send dc draw-bitmap offscreen-buffer 0 0))
     
     ; Clear the screen
-    (define/public (clear)
-      (for* ([xi (in-range 0 width-in-characters)]
-             [yi (in-range 0 height-in-characters)])
-        (send this write #\space xi yi default-foreground-color default-background-color)))
+    (define/public clear
+      (case-lambda
+        [()
+         (send this clear #\space 0 0 width-in-characters height-in-characters default-foreground-color default-background-color)]
+        [(char)
+         (send this clear char 0 0 width-in-characters height-in-characters default-foreground-color default-background-color)]
+        [(char foreground background)
+         (send this clear char 0 0 width-in-characters height-in-characters foreground background)]
+        [(char x y width height)
+         (send this clear char x y width height default-foreground-color default-background-color)]
+        [(char x y width height foreground background)
+         (unless (<= 0 x (- width-in-characters 1))
+           (raise-argument-error 'clear (format "x in the range [0, ~a)" width-in-characters) x))
+         (unless (<= 0 y (- height-in-characters 1))
+           (raise-argument-error 'clear (format "y in the range [0, ~a)" height-in-characters) y))
+         (unless (<= 0 width)
+           (raise-argument-error 'clear "positive integer? for width" width))
+         (unless (<= 0 height)
+           (raise-argument-error 'clear "positive integer? for height" height))
+         (unless (<= (+ x width) width-in-characters)
+           (raise-argument-error 'clear (format "x+width in range [0, ~a)" width-in-characters) (+ x width)))
+         (unless (<= (+ y height) height-in-characters)
+           (raise-argument-error 'clear (format "y+height in range [0, ~a)" height-in-characters) (+ y height)))
+         
+         (for* ([xi (in-range x (+ x width))]
+                [yi (in-range y (+ y height))])
+           (send this write char xi yi foreground background))]))
     
     ; Write a single character
-    (define/public (write char x y fg bg)
-      (matrix-set! chars x y char)
-      (matrix-set! foreground-colors x y fg)
-      (matrix-set! background-colors x y bg)
-                   
-      (set! cursor-x (unsafe-fx+ x 1))
-      (set! cursor-y (unsafe-fx+ y 1)))
-    
-    (define/public (write-tile x y t)
-      (matrix-set! chars x y (unsafe-tile-symbol t))
-      (matrix-set! foreground-colors x y (unsafe-tile-fg t))
-      (matrix-set! background-colors x y (unsafe-tile-bg t))
-                   
-      (set! cursor-x (unsafe-fx+ x 1))
-      (set! cursor-y (unsafe-fx+ y 1)))
+    (define/public write
+      (case-lambda
+        [(char)
+         (send this write char cursor-x cursor-y default-foreground-color default-background-color)]
+        [(char foreground)
+         (send this write char cursor-x cursor-y foreground default-background-color)]
+        [(char x/foreground y/background)
+         (if (and (number? x/foreground) (number? y/background))
+             (send this write char x/foreground y/background default-foreground-color default-background-color)
+             (send this write char cursor-x cursor-y x/foreground y/background))]
+        [(char x y foreground)
+         (send this write char x y foreground default-background-color)]
+        [(char x y foreground background)
+         (unless (<= 0 x (- width-in-characters 1))
+           (raise-argument-error 'write (format "x in the range [0, ~a)" width-in-characters) x))
+         (unless (<= 0 y (- height-in-characters 1))
+           (raise-argument-error 'write (format "y in the range [0, ~a)" height-in-characters) y))
+
+         (matrix-set! chars x y char)
+         (matrix-set! foreground-colors x y (->color foreground))
+         (matrix-set! background-colors x y (->color background))
+         (set! dirty-tiles (append dirty-tiles (list (list x y))))
+         (set! cursor-x (+ x 1))
+         (set! cursor-y (+ y 1))]))
         
     ; Write a string
     (define/public write-string
@@ -216,7 +263,7 @@
         [(str x y foreground background)
          (for ([c (in-string str)]
                [i (in-naturals)])
-           (send this write c (unsafe-fx+ x i) y foreground background))]))
+           (send this write c (+ x i) y foreground background))]))
     
     ; Write a string centered horizontally
     (define/public write-center
@@ -228,10 +275,20 @@
         [(str y foreground background)
          (define x (- (quotient width-in-characters 2) (quotient (string-length str) 2)))
          (send this write-string str x y foreground background)]))
+    (define/public (write-tile x y t)
+          (unless (<= 0 x (- width-in-characters 1))
+           (raise-argument-error 'write (format "x in the range [0, ~a)" width-in-characters) x))
+         (unless (<= 0 y (- height-in-characters 1))
+           (raise-argument-error 'write (format "y in the range [0, ~a)" height-in-characters) y))
+
+      (matrix-set! chars x y (unsafe-tile-symbol t))
+      (matrix-set! foreground-colors x y (unsafe-tile-fg t))
+      (matrix-set! background-colors x y (unsafe-tile-bg t))
+      (set! dirty-tiles (append dirty-tiles (list (list x y))))
+      (set! cursor-x (unsafe-fx+ x 1))
+      (set! cursor-y (unsafe-fx+ y 1)))
     
-    ; Map a function across the tiles
-    ; Functions should be of the form: x y char fg bg => char fg bg
-    (define/public (for-each-tile scene cx cy)
+   (define/public (for-each-tile scene cx cy)
       (define w (unsafe-fx- width-in-characters 1))
       (define h (unsafe-fx- height-in-characters 1))
       (let loop ([xi 0] [yi 0])
@@ -239,14 +296,14 @@
           (matrix-set! chars xi yi (unsafe-tile-symbol tile))
           (matrix-set! foreground-colors xi yi (unsafe-tile-fg tile))
           (matrix-set! background-colors xi yi (unsafe-tile-bg tile)))
-        (if (unsafe-fx>= xi w)
+         (if (unsafe-fx>= xi w)
             (unless (unsafe-fx>= yi h)
               (loop 0 (unsafe-fx+ 1 yi)))
             (loop (unsafe-fx+ 1 xi) yi))))
     
     ; Validate that the width and height make sense
-    (when (unsafe-fx<= width-in-characters 0) (raise-argument-error 'ascii-canvas% "positive integer" width-in-characters))
-    (when (unsafe-fx<= height-in-characters 0) (raise-argument-error 'ascii-canvas% "positive integer" height-in-characters))
+    (when (<= width-in-characters 0) (raise-argument-error 'ascii-canvas% "positive integer" width-in-characters))
+    (when (<= height-in-characters 0) (raise-argument-error 'ascii-canvas% "positive integer" height-in-characters))
     
     ; Set up the color / char arrays
     (set! chars (make-matrix width-in-characters height-in-characters (lambda (x y) (integer->char 0))))
@@ -263,16 +320,16 @@
     (define glyphs-dc (new bitmap-dc% [bitmap glyphs]))
     (send glyphs-dc draw-bitmap glyph-file 0 0)
     
-    (set! char-width (unsafe-fxquotient (send glyphs get-width) 16))
-    (set! char-height (unsafe-fxquotient (send glyphs get-height) 16))
+    (set! char-width (quotient (send glyphs get-width) 16))
+    (set! char-height (quotient (send glyphs get-height) 16))
     
  
     ; Create the canvas
     (super-new 
      [parent parent]
      [paint-callback (lambda (c dc) (my-paint-callback c dc))]
-     [min-width (unsafe-fx* width-in-characters char-width)]
-     [min-height (unsafe-fx* height-in-characters char-height)])
+     [min-width (* width-in-characters char-width)]
+     [min-height (* height-in-characters char-height)])
     
     ; Do an initial clear
     (send this clear)
